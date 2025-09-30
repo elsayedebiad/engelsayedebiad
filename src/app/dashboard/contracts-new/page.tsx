@@ -13,8 +13,9 @@ import {
   Calendar,
   Clock,
   User,
-  Trash2,
-  RefreshCw
+  Phone,
+  MapPin,
+  Trash2
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
@@ -39,7 +40,7 @@ interface Contract {
   }
 }
 
-export default function ContractsPage() {
+export default function ContractsNewPage() {
   const router = useRouter()
   const [contracts, setContracts] = useState<Contract[]>([])
   const [filteredContracts, setFilteredContracts] = useState<Contract[]>([])
@@ -49,30 +50,26 @@ export default function ContractsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // جلب التعاقدات من قاعدة البيانات
+  // جلب التعاقدات
   const fetchContracts = async () => {
     setIsLoading(true)
     try {
-      console.log('🔍 جلب التعاقدات من قاعدة البيانات...')
-      const response = await fetch('/api/contracts')
+      console.log('🔍 جلب التعاقدات...')
+      const response = await fetch('/api/contracts-new')
       
       if (response.ok) {
         const data = await response.json()
         console.log(`✅ تم جلب ${data.length} تعاقد`)
         setContracts(data || [])
         setFilteredContracts(data || [])
-        
-        if (data.length > 0) {
-          toast.success(`تم تحميل ${data.length} تعاقد من قاعدة البيانات`)
-        }
       } else {
         const errorData = await response.json()
         console.error('❌ خطأ في جلب التعاقدات:', errorData)
-        toast.error(`فشل في تحميل التعاقدات: ${errorData.error || 'خطأ غير معروف'}`)
+        toast.error('فشل في تحميل التعاقدات')
       }
     } catch (error) {
       console.error('❌ خطأ في الشبكة:', error)
-      toast.error('حدث خطأ أثناء الاتصال بقاعدة البيانات')
+      toast.error('حدث خطأ أثناء تحميل البيانات')
     } finally {
       setIsLoading(false)
     }
@@ -98,19 +95,13 @@ export default function ContractsPage() {
     }
   }, [searchTerm, contracts])
 
-  // تنسيق التاريخ والوقت (12 ساعة)
+  // تنسيق التاريخ والوقت
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString)
-      const timeFormatted = format(date, 'hh:mm a')
-      // تحويل AM/PM للعربية
-      const timeArabic = timeFormatted
-        .replace('AM', 'ص')
-        .replace('PM', 'م')
-      
       return {
         date: format(date, 'dd/MM/yyyy', { locale: ar }),
-        time: timeArabic
+        time: format(date, 'HH:mm', { locale: ar })
       }
     } catch (error) {
       return { date: 'غير محدد', time: '' }
@@ -139,7 +130,7 @@ export default function ContractsPage() {
     try {
       console.log('🗑️ حذف التعاقد:', selectedContract.id)
       
-      const response = await fetch(`/api/contracts?id=${selectedContract.id}`, {
+      const response = await fetch(`/api/contracts-new?id=${selectedContract.id}`, {
         method: 'DELETE'
       })
       
@@ -164,10 +155,7 @@ export default function ContractsPage() {
       <DashboardLayout>
         {() => (
           <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">جاري تحميل التعاقدات من قاعدة البيانات...</p>
-            </div>
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
           </div>
         )}
       </DashboardLayout>
@@ -183,23 +171,13 @@ export default function ContractsPage() {
               <Briefcase className="h-8 w-8 text-indigo-600 ml-3" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">إدارة التعاقدات</h1>
-                <p className="text-gray-600">عرض وإدارة جميع التعاقدات من قاعدة البيانات</p>
+                <p className="text-gray-600">عرض وإدارة جميع التعاقدات الحالية</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={fetchContracts}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                تحديث
-              </button>
-              <div className="bg-indigo-50 px-4 py-2 rounded-lg">
-                <span className="text-indigo-600 font-semibold">
-                  {filteredContracts.length} تعاقد
-                </span>
-              </div>
+            <div className="bg-indigo-50 px-4 py-2 rounded-lg">
+              <span className="text-indigo-600 font-semibold">
+                {filteredContracts.length} تعاقد
+              </span>
             </div>
           </div>
 
@@ -271,9 +249,7 @@ export default function ContractsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                        {contract.identityNumber || 'غير متوفر'}
-                      </span>
+                      {contract.identityNumber || 'غير متوفر'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {contract.cv.nationality || 'غير محدد'}
@@ -300,7 +276,7 @@ export default function ContractsPage() {
                           </span>
                         </div>
                         <div className="text-xs text-gray-500 text-center pt-1 border-t border-gray-300">
-                          تاريخ التعاقد (12 ساعة)
+                          تاريخ التعاقد (توقيت مصر)
                         </div>
                       </div>
                     </td>
@@ -308,14 +284,14 @@ export default function ContractsPage() {
                       <div className="flex space-x-3">
                         <button 
                           onClick={() => router.push(`/dashboard/cv/${contract.cv.id}/alqaeid`)} 
-                          className="text-gray-500 hover:text-indigo-600 transition-colors" 
+                          className="text-gray-500 hover:text-indigo-600" 
                           title="عرض السيرة الذاتية"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => openDeleteModal(contract)} 
-                          className="text-gray-500 hover:text-red-600 transition-colors" 
+                          className="text-gray-500 hover:text-red-600" 
                           title="حذف التعاقد"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -329,25 +305,15 @@ export default function ContractsPage() {
           </div>
 
           {/* رسالة عدم وجود تعاقدات */}
-          {filteredContracts.length === 0 && !isLoading && (
+          {filteredContracts.length === 0 && (
             <div className="text-center py-12">
               <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                {searchTerm ? 'لا توجد نتائج تطابق بحثك' : 'لا توجد تعاقدات في قاعدة البيانات'}
+                {searchTerm ? 'لا توجد نتائج تطابق بحثك' : 'لا توجد تعاقدات حالياً'}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm ? 'جرّب البحث بكلمات أخرى.' : 'ابدأ بالتعاقد مع السير الذاتية من صفحة الحجوزات.'}
+                {searchTerm ? 'جرّب البحث بكلمات أخرى.' : 'ابدأ بالتعاقد مع السير الذاتية من الصفحة الرئيسية.'}
               </p>
-              {!searchTerm && (
-                <div className="mt-4">
-                  <button
-                    onClick={() => router.push('/dashboard/bookings')}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-                  >
-                    اذهب لصفحة الحجوزات
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
@@ -384,7 +350,7 @@ export default function ContractsPage() {
                       <strong>تحذير:</strong> عند حذف التعاقد سيتم:
                     </p>
                     <ul className="text-xs text-yellow-700 mt-1 space-y-1">
-                      <li>• حذف التعاقد نهائياً من قاعدة البيانات</li>
+                      <li>• حذف التعاقد نهائياً من النظام</li>
                       <li>• إرجاع السيرة الذاتية إلى حالة "جديد"</li>
                       <li>• إتاحة السيرة للحجز والتعاقد مرة أخرى</li>
                     </ul>

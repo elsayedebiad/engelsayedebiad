@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// GET - جلب جميع التعاقدات
+// GET - جلب جميع التعاقدات من Prisma
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 جلب التعاقدات من قاعدة البيانات...')
@@ -38,8 +38,6 @@ export async function GET(request: NextRequest) {
       error: 'فشل في جلب التعاقدات',
       details: error instanceof Error ? error.message : 'خطأ غير معروف'
     }, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
@@ -111,7 +109,10 @@ export async function POST(request: NextRequest) {
         data: { status: 'HIRED' }
       })
 
-      // ملاحظة: تم إنشاء التعاقد وتحديث حالة السيرة بنجاح
+      // حذف أي حجوزات موجودة لهذه السيرة الذاتية
+      await tx.booking.deleteMany({
+        where: { cvId: Number(cvId) }
+      })
 
       return contract
     })
@@ -132,8 +133,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
@@ -194,7 +193,5 @@ export async function DELETE(request: NextRequest) {
       },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

@@ -90,9 +90,9 @@ export async function POST(request: NextRequest) {
         description,
         userId: decoded.userId,
         targetType,
-        targetId,
+        targetId: targetId ? targetId.toString() : null,
         targetName,
-        metadata: metadata ? JSON.stringify(metadata) : null,
+        metadata: metadata ? JSON.stringify(metadata) : undefined,
         ipAddress,
         userAgent
       }
