@@ -14,10 +14,67 @@ import {
   Clock,
   User,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Edit,
+  IdCard
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
+
+// Component لعرض صورة الملف الشخصي مع معالجة الأخطاء
+const ProfileImage = ({ 
+  src, 
+  alt, 
+  size = 'sm' 
+}: { 
+  src?: string; 
+  alt: string; 
+  size?: 'sm' | 'md' | 'lg' 
+}) => {
+  const [imageError, setImageError] = useState(false)
+  const [imageLoading, setImageLoading] = useState(true)
+
+  const sizeClasses = {
+    sm: 'h-10 w-10',
+    md: 'h-12 w-12', 
+    lg: 'h-16 w-16'
+  }
+
+  const iconSizes = {
+    sm: 'h-5 w-5',
+    md: 'h-6 w-6',
+    lg: 'h-8 w-8'
+  }
+
+  if (!src || imageError) {
+    return (
+      <div className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border-2 border-blue-300`}>
+        <User className={`${iconSizes[size]} text-blue-600`} />
+      </div>
+    )
+  }
+
+  return (
+    <div className={`${sizeClasses[size]} relative`}>
+      {imageLoading && (
+        <div className={`${sizeClasses[size]} rounded-full bg-gray-200 animate-pulse flex items-center justify-center border border-gray-300`}>
+          <User className={`${iconSizes[size]} text-gray-400`} />
+        </div>
+      )}
+      <img 
+        className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200 ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
+        src={src} 
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setImageLoading(false)}
+        onError={() => {
+          setImageError(true)
+          setImageLoading(false)
+        }}
+      />
+    </div>
+  )
+}
 
 interface Contract {
   id: number
@@ -48,6 +105,12 @@ export default function ContractsPage() {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  // حالات تعديل رقم الهوية
+  const [showEditIdentityModal, setShowEditIdentityModal] = useState(false)
+  const [editingContract, setEditingContract] = useState<Contract | null>(null)
+  const [newIdentityNumber, setNewIdentityNumber] = useState('')
+  const [isUpdatingIdentity, setIsUpdatingIdentity] = useState(false)
 
   // جلب التعاقدات من قاعدة البيانات
   const fetchContracts = async () => {
@@ -159,6 +222,62 @@ export default function ContractsPage() {
     }
   }
 
+  // فتح مودال تعديل رقم الهوية
+  const openEditIdentityModal = (contract: Contract) => {
+    setEditingContract(contract)
+    setNewIdentityNumber(contract.identityNumber)
+    setShowEditIdentityModal(true)
+  }
+
+  // إغلاق مودال تعديل رقم الهوية
+  const closeEditIdentityModal = () => {
+    setEditingContract(null)
+    setNewIdentityNumber('')
+    setShowEditIdentityModal(false)
+    setIsUpdatingIdentity(false)
+  }
+
+  // تأكيد تعديل رقم الهوية
+  const confirmUpdateIdentity = async () => {
+    if (!editingContract || !newIdentityNumber.trim()) {
+      toast.error('يرجى إدخال رقم الهوية الجديد')
+      return
+    }
+
+    if (newIdentityNumber.length < 10) {
+      toast.error('رقم الهوية يجب أن يكون 10 أرقام على الأقل')
+      return
+    }
+
+    setIsUpdatingIdentity(true)
+
+    try {
+      const response = await fetch(`/api/contracts/${editingContract.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          identityNumber: newIdentityNumber.trim()
+        })
+      })
+
+      if (response.ok) {
+        toast.success('تم تحديث رقم الهوية بنجاح')
+        closeEditIdentityModal()
+        fetchContracts() // إعادة تحميل التعاقدات
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'فشل في تحديث رقم الهوية')
+      }
+    } catch (error) {
+      console.error('❌ خطأ في تحديث رقم الهوية:', error)
+      toast.error(error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث رقم الهوية')
+    } finally {
+      setIsUpdatingIdentity(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -247,19 +366,11 @@ export default function ContractsPage() {
                   <tr key={contract.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          {contract.cv.profileImage ? (
-                            <img 
-                              className="h-10 w-10 rounded-full object-cover" 
-                              src={contract.cv.profileImage} 
-                              alt={contract.cv.fullName}
-                            />
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                              <User className="h-6 w-6 text-gray-600" />
-                            </div>
-                          )}
-                        </div>
+                        <ProfileImage 
+                          src={contract.cv.profileImage} 
+                          alt={contract.cv.fullName}
+                          size="sm"
+                        />
                         <div className="mr-4">
                           <div className="text-sm font-medium text-gray-900">
                             {contract.cv.fullName}
@@ -312,6 +423,13 @@ export default function ContractsPage() {
                           title="عرض السيرة الذاتية"
                         >
                           <Eye className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => openEditIdentityModal(contract)} 
+                          className="text-gray-500 hover:text-blue-600 transition-colors" 
+                          title="تعديل رقم الهوية"
+                        >
+                          <Edit className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => openDeleteModal(contract)} 
@@ -413,6 +531,103 @@ export default function ContractsPage() {
                       <>
                         <Trash2 className="h-4 w-4" />
                         تأكيد الحذف
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* مودال تعديل رقم الهوية */}
+          {showEditIdentityModal && editingContract && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <IdCard className="h-5 w-5 text-blue-600" />
+                    تعديل رقم الهوية
+                  </h3>
+                  <button
+                    onClick={closeEditIdentityModal}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                    disabled={isUpdatingIdentity}
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="mb-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <h4 className="font-medium text-gray-900 mb-3">معلومات التعاقد:</h4>
+                    <div className="flex items-start gap-3">
+                      <ProfileImage 
+                        src={editingContract.cv.profileImage} 
+                        alt={editingContract.cv.fullName}
+                        size="md"
+                      />
+                      <div className="flex-1 text-sm text-gray-700 space-y-1">
+                        <p><span className="font-medium">الاسم:</span> {editingContract.cv.fullName}</p>
+                        <p><span className="font-medium">رقم الهوية الحالي:</span> {editingContract.identityNumber}</p>
+                        {editingContract.cv.referenceCode && (
+                          <p><span className="font-medium">الكود المرجعي:</span> {editingContract.cv.referenceCode}</p>
+                        )}
+                        {editingContract.cv.nationality && (
+                          <p><span className="font-medium">الجنسية:</span> {editingContract.cv.nationality}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="newIdentityNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                      رقم الهوية الجديد *
+                    </label>
+                    <input
+                      type="text"
+                      id="newIdentityNumber"
+                      value={newIdentityNumber}
+                      onChange={(e) => setNewIdentityNumber(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="أدخل رقم الهوية الجديد"
+                      disabled={isUpdatingIdentity}
+                      dir="ltr"
+                      maxLength={20}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      يجب أن يكون رقم الهوية 10 أرقام على الأقل
+                    </p>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-yellow-800">
+                      <strong>تنبيه:</strong> سيتم تحديث رقم الهوية في سجل التعاقد فقط.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeEditIdentityModal}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
+                    disabled={isUpdatingIdentity}
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    onClick={confirmUpdateIdentity}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    disabled={isUpdatingIdentity || !newIdentityNumber.trim()}
+                  >
+                    {isUpdatingIdentity ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        جاري التحديث...
+                      </>
+                    ) : (
+                      <>
+                        <Edit className="h-4 w-4" />
+                        تأكيد التعديل
                       </>
                     )}
                   </button>

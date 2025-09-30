@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Role } from '@prisma/client'
 import toast from 'react-hot-toast'
 
 export default function SimpleDashboard() {
@@ -55,20 +56,20 @@ export default function SimpleDashboard() {
     return null // Will redirect to login
   }
 
-  const getRoleText = (role: string) => {
+  const getRoleText = (role: Role) => {
     switch (role) {
-      case 'ADMIN': return 'مدير عام'
-      case 'SUB_ADMIN': return 'مدير فرعي'
-      case 'USER': return 'مستخدم عادي'
+      case Role.ADMIN: return 'مدير عام'
+      case Role.SUB_ADMIN: return 'مدير فرعي'
+      case Role.USER: return 'مستخدم عادي'
       default: return role
     }
   }
 
-  const getRoleColor = (role: string) => {
+  const getRoleColor = (role: Role) => {
     switch (role) {
-      case 'ADMIN': return 'bg-red-100 text-red-800'
-      case 'SUB_ADMIN': return 'bg-yellow-100 text-yellow-800'
-      case 'USER': return 'bg-green-100 text-green-800'
+      case Role.ADMIN: return 'bg-red-100 text-red-800'
+      case Role.SUB_ADMIN: return 'bg-yellow-100 text-yellow-800'
+      case Role.USER: return 'bg-green-100 text-green-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }

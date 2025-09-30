@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { Role } from '@prisma/client'
 import { 
   FileText, 
   Plus, 
@@ -36,7 +37,7 @@ interface SidebarProps {
     id: string
     name: string
     email: string
-    role: string
+    role: Role
   } | null
   onLogout: () => void
 }
@@ -234,7 +235,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
 
   const renderNavItem = (item: NavItem, level: number = 0) => {
     // Hide admin-only items for non-admin users
-    if (item.adminOnly && user?.role !== 'ADMIN') {
+    if (item.adminOnly && user?.role !== Role.ADMIN) {
       return null
     }
 
@@ -313,20 +314,20 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
     )
   }
 
-  const getRoleText = (role: string) => {
+  const getRoleText = (role: Role) => {
     switch (role) {
-      case 'ADMIN': return 'مدير عام'
-      case 'SUB_ADMIN': return 'مدير فرعي'  
-      case 'USER': return 'مستخدم عادي'
+      case Role.ADMIN: return 'مدير عام'
+      case Role.SUB_ADMIN: return 'مدير فرعي'  
+      case Role.USER: return 'مستخدم عادي'
       default: return role
     }
   }
 
-  const getRoleColor = (role: string) => {
+  const getRoleColor = (role: Role) => {
     switch (role) {
-      case 'ADMIN': return 'bg-red-100 text-red-800'
-      case 'SUB_ADMIN': return 'bg-yellow-100 text-yellow-800'
-      case 'USER': return 'bg-green-100 text-green-800'
+      case Role.ADMIN: return 'bg-red-100 text-red-800'
+      case Role.SUB_ADMIN: return 'bg-yellow-100 text-yellow-800'
+      case Role.USER: return 'bg-green-100 text-green-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -423,7 +424,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
         {/* ===== الجزء السفلي الثابت ===== */}
         <div className="flex-shrink-0">
           {/* Admin Tools */}
-          {!isCollapsed && user?.role === 'ADMIN' && (
+          {!isCollapsed && user?.role === Role.ADMIN && (
             <div className="p-4 border-t border-gray-200">
               <button
                 onClick={() => {

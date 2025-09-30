@@ -178,7 +178,7 @@ export default function UsersManagementPage() {
     <DashboardLayout>
       {(user) => {
         // Check if user is admin
-        if (user?.role !== 'ADMIN') {
+        if (user?.role !== Role.ADMIN) {
           return (
             <div className="text-center py-12">
               <Shield className="mx-auto h-12 w-12 text-gray-400" />

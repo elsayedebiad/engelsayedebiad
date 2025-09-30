@@ -144,3 +144,99 @@ export async function GET(
     )
   }
 }
+
+// PUT - تحديث رقم الهوية في التعاقد
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authResult = await validateAuthFromRequest(request)
+    if (!authResult.success || !authResult.user) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    }
+
+    const user = authResult.user
+    const contractId = parseInt(params.id)
+    const { identityNumber } = await request.json()
+
+    if (!identityNumber || identityNumber.trim().length < 10) {
+      return NextResponse.json(
+        { error: 'رقم الهوية يجب أن يكون 10 أرقام على الأقل' },
+        { status: 400 }
+      )
+    }
+
+    // العثور على التعاقد
+    const existingContract = await db.contract.findUnique({
+      where: { id: contractId },
+      include: {
+        cv: {
+          select: {
+            id: true,
+            fullName: true,
+            referenceCode: true
+          }
+        }
+      }
+    })
+
+    if (!existingContract) {
+      return NextResponse.json({ error: 'التعاقد غير موجود' }, { status: 404 })
+    }
+
+    // تحديث رقم الهوية
+    const updatedContract = await db.contract.update({
+      where: { id: contractId },
+      data: {
+        identityNumber: identityNumber.trim(),
+        updatedAt: new Date()
+      },
+      include: {
+        cv: {
+          select: {
+            id: true,
+            fullName: true,
+            fullNameArabic: true,
+            referenceCode: true,
+            nationality: true,
+            position: true,
+            profileImage: true,
+            status: true
+          }
+        }
+      }
+    })
+
+    // إضافة سجل في ActivityLog
+    await db.activityLog.create({
+      data: {
+        userId: user.id,
+        cvId: existingContract.cvId,
+        action: 'CONTRACT_IDENTITY_UPDATED',
+        description: `تم تحديث رقم الهوية في التعاقد للسيرة الذاتية ${existingContract.cv.fullName}`,
+        metadata: {
+          contractId: contractId,
+          oldIdentityNumber: existingContract.identityNumber,
+          newIdentityNumber: identityNumber.trim(),
+          updatedAt: new Date().toISOString()
+        },
+        targetType: 'CONTRACT',
+        targetId: contractId.toString(),
+        targetName: existingContract.cv.fullName
+      }
+    })
+
+    return NextResponse.json({
+      message: 'تم تحديث رقم الهوية بنجاح',
+      contract: updatedContract
+    })
+
+  } catch (error) {
+    console.error('Error updating contract identity:', error)
+    return NextResponse.json(
+      { error: 'فشل في تحديث رقم الهوية' },
+      { status: 500 }
+    )
+  }
+}

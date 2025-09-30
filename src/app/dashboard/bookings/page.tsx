@@ -18,10 +18,70 @@ import {
   MapPin,
   Clock,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  FileSignature,
+  CheckCircle,
+  X,
+  IdCard,
+  MessageSquare
 } from 'lucide-react'
 import DashboardLayout from '../../../components/DashboardLayout'
 import CountryFlag from '../../../components/CountryFlag'
+
+// Component لعرض صورة الملف الشخصي مع معالجة الأخطاء
+const ProfileImage = ({ 
+  src, 
+  alt, 
+  size = 'sm' 
+}: { 
+  src?: string; 
+  alt: string; 
+  size?: 'sm' | 'md' | 'lg' 
+}) => {
+  const [imageError, setImageError] = useState(false)
+  const [imageLoading, setImageLoading] = useState(true)
+
+  const sizeClasses = {
+    sm: 'h-10 w-10',
+    md: 'h-12 w-12', 
+    lg: 'h-16 w-16'
+  }
+
+  const iconSizes = {
+    sm: 'h-5 w-5',
+    md: 'h-6 w-6',
+    lg: 'h-8 w-8'
+  }
+
+  if (!src || imageError) {
+    return (
+      <div className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border-2 border-blue-300`}>
+        <User className={`${iconSizes[size]} text-blue-600`} />
+      </div>
+    )
+  }
+
+  return (
+    <div className={`${sizeClasses[size]} relative`}>
+      {imageLoading && (
+        <div className={`${sizeClasses[size]} rounded-full bg-gray-200 animate-pulse flex items-center justify-center border border-gray-300`}>
+          <User className={`${iconSizes[size]} text-gray-400`} />
+        </div>
+      )}
+      <img 
+        className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200 ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
+        src={src} 
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setImageLoading(false)}
+        onError={() => {
+          setImageError(true)
+          setImageLoading(false)
+        }}
+      />
+    </div>
+  )
+}
 
 interface Booking {
   id: number
@@ -53,6 +113,16 @@ export default function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [nationalityFilter, setNationalityFilter] = useState('')
   const router = useRouter()
+
+  // حالات مودال التعاقد
+  const [showContractModal, setShowContractModal] = useState(false)
+  const [contractingBooking, setContractingBooking] = useState<Booking | null>(null)
+  const [contractData, setContractData] = useState({
+    identityNumber: '',
+    contractStartDate: new Date().toISOString().split('T')[0],
+    notes: ''
+  })
+  const [isCreatingContract, setIsCreatingContract] = useState(false)
 
   useEffect(() => {
     fetchBookings()
@@ -122,6 +192,76 @@ export default function BookingsPage() {
 
   const viewCV = (cvId: string) => {
     router.push(`/dashboard/cv/${cvId}`)
+  }
+
+  // فتح مودال التعاقد
+  const openContractModal = (booking: Booking) => {
+    setContractingBooking(booking)
+    setContractData({
+      identityNumber: booking.identityNumber,
+      contractStartDate: new Date().toISOString().split('T')[0],
+      notes: ''
+    })
+    setShowContractModal(true)
+  }
+
+  // إغلاق مودال التعاقد
+  const closeContractModal = () => {
+    setContractingBooking(null)
+    setContractData({
+      identityNumber: '',
+      contractStartDate: new Date().toISOString().split('T')[0],
+      notes: ''
+    })
+    setShowContractModal(false)
+    setIsCreatingContract(false)
+  }
+
+  // تأكيد التعاقد
+  const confirmContract = async () => {
+    if (!contractingBooking || !contractData.identityNumber.trim()) {
+      toast.error('يرجى إدخال رقم الهوية')
+      return
+    }
+
+    if (contractData.identityNumber.length < 10) {
+      toast.error('رقم الهوية يجب أن يكون 10 أرقام على الأقل')
+      return
+    }
+
+    setIsCreatingContract(true)
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/contracts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          cvId: contractingBooking.cv.id,
+          identityNumber: contractData.identityNumber.trim(),
+          contractDate: contractData.contractStartDate,
+          notes: contractData.notes.trim() || null
+        })
+      })
+
+      if (response.ok) {
+        toast.success('تم إنشاء التعاقد بنجاح')
+        closeContractModal()
+        fetchBookings() // تحديث قائمة الحجوزات
+        router.push('/dashboard/contracts') // الانتقال إلى صفحة التعاقدات
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'فشل في إنشاء التعاقد')
+      }
+    } catch (error) {
+      console.error('Error creating contract:', error)
+      toast.error('حدث خطأ أثناء إنشاء التعاقد')
+    } finally {
+      setIsCreatingContract(false)
+    }
   }
 
   if (isLoading) {
@@ -240,17 +380,11 @@ export default function BookingsPage() {
                       <tr key={booking.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            {booking.cv.profileImage ? (
-                              <img
-                                src={booking.cv.profileImage}
-                                alt={booking.cv.fullName}
-                                className="h-10 w-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <User className="h-5 w-5 text-gray-500" />
-                              </div>
-                            )}
+                            <ProfileImage 
+                              src={booking.cv.profileImage} 
+                              alt={booking.cv.fullName}
+                              size="sm"
+                            />
                             <div className="min-w-0 flex-1">
                               <div className="font-medium text-gray-900 truncate">
                                 {booking.cv.fullName}
@@ -320,13 +454,22 @@ export default function BookingsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => viewCV(booking.cv.id)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="عرض السيرة الذاتية"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => viewCV(booking.cv.id)}
+                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="عرض السيرة الذاتية"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => openContractModal(booking)}
+                              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                              title="إنشاء تعاقد"
+                            >
+                              <FileSignature className="h-4 w-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -380,6 +523,145 @@ export default function BookingsPage() {
                     </div>
                     <div className="text-sm text-gray-500">جنسيات مختلفة</div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* مودال إنشاء التعاقد */}
+          {showContractModal && contractingBooking && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <FileSignature className="h-5 w-5 text-green-600" />
+                    إنشاء تعاقد
+                  </h3>
+                  <button
+                    onClick={closeContractModal}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                    disabled={isCreatingContract}
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="mb-6">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                    <h4 className="font-medium text-gray-900 mb-3">معلومات الحجز:</h4>
+                    <div className="flex items-start gap-3">
+                      <ProfileImage 
+                        src={contractingBooking.cv.profileImage} 
+                        alt={contractingBooking.cv.fullName}
+                        size="md"
+                      />
+                      <div className="flex-1 text-sm text-gray-700 space-y-1">
+                        <p><span className="font-medium">الاسم:</span> {contractingBooking.cv.fullName}</p>
+                        <p><span className="font-medium">رقم الهوية المحجوز:</span> {contractingBooking.identityNumber}</p>
+                        {contractingBooking.cv.referenceCode && (
+                          <p><span className="font-medium">الكود المرجعي:</span> {contractingBooking.cv.referenceCode}</p>
+                        )}
+                        {contractingBooking.cv.nationality && (
+                          <p><span className="font-medium">الجنسية:</span> {contractingBooking.cv.nationality}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* رقم الهوية */}
+                    <div>
+                      <label htmlFor="contractIdentityNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                        <IdCard className="h-4 w-4 inline ml-2" />
+                        رقم الهوية للتعاقد *
+                      </label>
+                      <input
+                        type="text"
+                        id="contractIdentityNumber"
+                        value={contractData.identityNumber}
+                        onChange={(e) => setContractData({ ...contractData, identityNumber: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="أدخل رقم الهوية (يمكن تأكيد أو تغيير الرقم)"
+                        disabled={isCreatingContract}
+                        dir="ltr"
+                        maxLength={20}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        يمكنك تأكيد رقم الهوية المحجوز أو تغييره إذا لزم الأمر
+                      </p>
+                    </div>
+
+                    {/* تاريخ بداية التعاقد */}
+                    <div>
+                      <label htmlFor="contractStartDate" className="block text-sm font-medium text-gray-700 mb-2">
+                        <Calendar className="h-4 w-4 inline ml-2" />
+                        تاريخ بداية التعاقد *
+                      </label>
+                      <input
+                        type="date"
+                        id="contractStartDate"
+                        value={contractData.contractStartDate}
+                        onChange={(e) => setContractData({ ...contractData, contractStartDate: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        disabled={isCreatingContract}
+                      />
+                    </div>
+
+                    {/* ملاحظات */}
+                    <div>
+                      <label htmlFor="contractNotes" className="block text-sm font-medium text-gray-700 mb-2">
+                        <MessageSquare className="h-4 w-4 inline ml-2" />
+                        ملاحظات التعاقد (اختياري)
+                      </label>
+                      <textarea
+                        id="contractNotes"
+                        value={contractData.notes}
+                        onChange={(e) => setContractData({ ...contractData, notes: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="أدخل أي ملاحظات خاصة بالتعاقد..."
+                        rows={3}
+                        disabled={isCreatingContract}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>تنبيه:</strong> عند إنشاء التعاقد سيتم:
+                    </p>
+                    <ul className="text-xs text-blue-700 mt-1 space-y-1">
+                      <li>• تحويل حالة السيرة الذاتية إلى "متعاقد عليها"</li>
+                      <li>• إنشاء سجل تعاقد جديد</li>
+                      <li>• الانتقال إلى صفحة التعاقدات</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeContractModal}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
+                    disabled={isCreatingContract}
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    onClick={confirmContract}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    disabled={isCreatingContract || !contractData.identityNumber.trim()}
+                  >
+                    {isCreatingContract ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        جاري إنشاء التعاقد...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        تأكيد التعاقد
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>

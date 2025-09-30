@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { Role } from '@prisma/client'
 import Sidebar from './Sidebar'
 
 interface User {
   id: string
   email: string
   name: string
-  role: string
+  role: Role
 }
 
 interface DashboardLayoutProps {

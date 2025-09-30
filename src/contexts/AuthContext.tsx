@@ -1,12 +1,13 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { Role } from '@prisma/client'
 
 interface User {
   id: number
   email: string
   name: string
-  role: string
+  role: Role
   isActive: boolean
 }
 
