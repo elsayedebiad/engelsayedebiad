@@ -1,5 +1,6 @@
 import React from 'react';
 import { Play, X } from 'lucide-react';
+import { getImageUrl } from '../../lib/image-utils';
 
 // Interface للسيرة الذاتية
 interface CV {
@@ -81,6 +82,7 @@ interface QSOOriginalExactTemplateProps {
 }
 
 const QSOOriginalExactTemplate: React.FC<QSOOriginalExactTemplateProps> = ({ cv, selectedVideo, setSelectedVideo }) => {
+  
   
   // دالة لتحويل مستوى المهارة
   const getSkillLevel = (skill?: string) => {
@@ -197,14 +199,22 @@ const QSOOriginalExactTemplate: React.FC<QSOOriginalExactTemplateProps> = ({ cv,
               borderBottomRightRadius: '2100px',
               borderBottomLeftRadius: '2100px'
             }}>
-              {cv.profileImage ? (
+              {getImageUrl(cv.profileImage) ? (
                 <img 
-                  src={cv.profileImage} 
+                  src={getImageUrl(cv.profileImage)!} 
                   alt={cv.fullName}
                   style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover'
+                  }}
+                  onError={(e) => {
+                    console.log('خطأ في تحميل الصورة:', getImageUrl(cv.profileImage));
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    if (target.nextElementSibling) {
+                      (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                    }
                   }}
                 />
               ) : (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Play, X } from 'lucide-react';
+import { getImageUrl } from '../../lib/image-utils';
 
 // Interface للسيرة الذاتية
 interface CV {
@@ -81,6 +82,7 @@ interface QSOTemplateProps {
 }
 
 const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelectedVideo }) => {
+  
   
   // دالة لتحويل مستوى المهارة
   const getSkillLevel = (skill?: string) => {
@@ -561,9 +563,9 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
     borderBottomRightRadius: '250px',
     borderTop: '0',
             }}>
-              {cv.profileImage ? (
+              {getImageUrl(cv.profileImage) ? (
                 <img 
-                  src={cv.profileImage} 
+                  src={getImageUrl(cv.profileImage)!} 
                   alt={cv.fullName || 'صورة شخصية'}
                   style={{
                     width: '100%',
@@ -571,7 +573,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                     objectFit: 'cover'
                   }}
                   onError={(e) => {
-                    console.log('خطأ في تحميل الصورة:', cv.profileImage);
+                    console.log('خطأ في تحميل الصورة:', getImageUrl(cv.profileImage));
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                     if (target.nextElementSibling) {
@@ -584,7 +586,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                 width: '100%',
                 height: '100%',
                 backgroundColor: '#f0f0f0',
-                display: cv.profileImage ? 'none' : 'flex',
+                display: getImageUrl(cv.profileImage) ? 'none' : 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '3rem',

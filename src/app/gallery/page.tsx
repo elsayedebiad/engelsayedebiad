@@ -2,25 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { toast } from 'react-hot-toast'
 import { CVStatus, Priority, SkillLevel } from '@prisma/client'
-import { 
-  ArrowLeft, 
-  Eye, 
-  MessageCircle, 
-  Download, 
-  Search, 
-  Filter, 
-  Grid3X3, 
-  List, 
-  Settings,
-  Share2,
-  Copy,
-  ExternalLink,
-  Play,
-  X
-} from 'lucide-react'
+import { Search, Filter, Eye, MessageCircle, Star, ChevronDown, Grid, List, Download, Play } from 'lucide-react'
 import CountryFlag from '../../components/CountryFlag'
+import { getCountryInfo } from '../../lib/country-utils'
+import { getImageUrl, generateAvatarUrl } from '../../lib/image-utils'
 
 interface CV {
   id: string
@@ -631,11 +617,15 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                   <div className="space-y-4">
                     {/* Profile Image */}
                     <div className="flex justify-center">
-                      {cv.profileImage ? (
+                      {getImageUrl(cv.profileImage) ? (
                         <img
-                          src={cv.profileImage}
+                          src={getImageUrl(cv.profileImage)!}
                           alt={cv.fullName}
                           className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = generateAvatarUrl(cv.fullName, 80);
+                          }}
                         />
                       ) : (
                         <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
@@ -726,11 +716,15 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                   // List View
                   <div className="flex items-center gap-4">
                     {/* Profile Image */}
-                    {cv.profileImage ? (
+                    {getImageUrl(cv.profileImage) ? (
                       <img
-                        src={cv.profileImage}
+                        src={getImageUrl(cv.profileImage)!}
                         alt={cv.fullName}
                         className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = generateAvatarUrl(cv.fullName, 64);
+                        }}
                       />
                     ) : (
                       <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
