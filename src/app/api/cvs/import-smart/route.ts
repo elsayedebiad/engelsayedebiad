@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 import { PrismaClient } from '@prisma/client'
 import { NotificationService } from '@/lib/notification-service'
 import { processImage } from '@/lib/image-processor'
+import { processVideo } from '@/lib/video-processor'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
@@ -663,12 +664,34 @@ export async function POST(request: NextRequest) {
           let finalProfileImage = cleanStringValue(cv.profileImage)
           if (finalProfileImage) {
             console.log(`🖼️ محاولة تحميل صورة من: ${finalProfileImage}`)
-            const downloadedPath = await processImage(finalProfileImage)
-            if (downloadedPath) {
-              finalProfileImage = downloadedPath
-              console.log(`✅ تم تحميل الصورة إلى: ${finalProfileImage}`)
+            try {
+              const downloadedPath = await processImage(finalProfileImage)
+              if (downloadedPath) {
+                finalProfileImage = downloadedPath
+                console.log(`✅ تم تحميل الصورة إلى: ${finalProfileImage}`)
+              } else {
+                console.log(`❌ فشل في تحميل الصورة، سيتم الاحتفاظ بالرابط الأصلي`)
+                // Keep original URL as fallback
+                finalProfileImage = finalProfileImage
+              }
+            } catch (imageError) {
+              console.error(`❌ خطأ في معالجة الصورة:`, imageError)
+              // Keep original URL as fallback
+              finalProfileImage = finalProfileImage
+            }
+          }
+
+          // Handle video URL processing
+          let finalVideoUrl = cleanStringValue(cv.videoUrl)
+          if (finalVideoUrl) {
+            console.log(`🎥 محاولة معالجة رابط الفيديو: ${finalVideoUrl}`)
+            const processedVideoUrl = await processVideo(finalVideoUrl)
+            if (processedVideoUrl) {
+              finalVideoUrl = processedVideoUrl
+              console.log(`✅ تم معالجة رابط الفيديو: ${finalVideoUrl}`)
             } else {
-              console.log(`❌ فشل في تحميل الصورة`)
+              console.log(`❌ فشل في معالجة رابط الفيديو`)
+              finalVideoUrl = undefined
             }
           }
         
@@ -720,7 +743,7 @@ export async function POST(request: NextRequest) {
                 notes: cv.notes || null,
                 priority: cv.priority || 'MEDIUM',
                 profileImage: finalProfileImage || null,
-                videoLink: cv.videoUrl || null,
+                videoLink: finalVideoUrl || null,
                 source: 'Excel Smart Import',
                 createdById: userId,
                 updatedById: userId
@@ -752,12 +775,34 @@ export async function POST(request: NextRequest) {
             let finalProfileImage = cleanStringValue(cv.profileImage)
             if (finalProfileImage) {
               console.log(`🖼️ محاولة تحميل صورة من: ${finalProfileImage}`)
-              const downloadedPath = await processImage(finalProfileImage)
-              if (downloadedPath) {
-                finalProfileImage = downloadedPath
-                console.log(`✅ تم تحميل الصورة إلى: ${finalProfileImage}`)
+              try {
+                const downloadedPath = await processImage(finalProfileImage)
+                if (downloadedPath) {
+                  finalProfileImage = downloadedPath
+                  console.log(`✅ تم تحميل الصورة إلى: ${finalProfileImage}`)
+                } else {
+                  console.log(`❌ فشل في تحميل الصورة، سيتم الاحتفاظ بالرابط الأصلي`)
+                  // Keep original URL as fallback
+                  finalProfileImage = finalProfileImage
+                }
+              } catch (imageError) {
+                console.error(`❌ خطأ في معالجة الصورة:`, imageError)
+                // Keep original URL as fallback
+                finalProfileImage = finalProfileImage
+              }
+            }
+
+            // Handle video URL processing
+            let finalVideoUrl = cleanStringValue(cv.videoUrl)
+            if (finalVideoUrl) {
+              console.log(`🎥 محاولة معالجة رابط الفيديو: ${finalVideoUrl}`)
+              const processedVideoUrl = await processVideo(finalVideoUrl)
+              if (processedVideoUrl) {
+                finalVideoUrl = processedVideoUrl
+                console.log(`✅ تم معالجة رابط الفيديو: ${finalVideoUrl}`)
               } else {
-                console.log(`❌ فشل في تحميل الصورة`)
+                console.log(`❌ فشل في معالجة رابط الفيديو`)
+                finalVideoUrl = undefined
               }
             }
           
@@ -810,7 +855,7 @@ export async function POST(request: NextRequest) {
                   notes: cv.notes || null,
                   priority: cv.priority || 'MEDIUM',
                   profileImage: finalProfileImage || null,
-                  videoLink: cv.videoUrl || null,
+                  videoLink: finalVideoUrl || null,
                   updatedById: userId
                 }
               })

@@ -544,71 +544,67 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          width: '584px', // عرض ثابت للطباعة
-          minHeight: '2048px', // ارتفاع ثابت
+          width: '650px', // عرض أكبر
+          height: '2500px', // ارتفاع ثابت متساوي
           order: 0 // ترتيب ثابت
         }}>
           {/* Profile Section */}
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <div style={{
-              width: '200px',
-              height: '240px',
-              overflow: 'hidden',
-              margin: '0 auto 20px',
-              border: '4px solid #43dacb',
-              borderRadius: '20px'
+    width: '350px',
+    height: '400px',
+    overflow: 'hidden',
+    margin: '0px auto 20px',
+    border: '4px solid rgb(67, 218, 203)',
+    /* border-radius: 20px; */
+    borderBottomLeftRadius: '250px',
+    borderBottomRightRadius: '250px',
+    borderTop: '0',
             }}>
               {cv.profileImage ? (
                 <img 
                   src={cv.profileImage} 
-                  alt={cv.fullName}
+                  alt={cv.fullName || 'صورة شخصية'}
                   style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover'
                   }}
+                  onError={(e) => {
+                    console.log('خطأ في تحميل الصورة:', cv.profileImage);
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    if (target.nextElementSibling) {
+                      (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                    }
+                  }}
                 />
-              ) : (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: '#f0f0f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '3rem',
-                  color: '#ccc'
-                }}>
-                  👤
-                </div>
-              )}
+              ) : null}
+              <div style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: '#f0f0f0',
+                display: cv.profileImage ? 'none' : 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '3rem',
+                color: '#ccc'
+              }}>
+                👤
+              </div>
             </div>
 
-            {/* Frame 1 */}
-            <div style={{
-              width: '300px',
-              height: '50px',
-              backgroundColor: '#43dacb',
-              borderRadius: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-              fontSize: '1.3rem',
-              fontWeight: 'bold'
-            }}>
-              المعلومات الشخصية
-            </div>
+            <img src="/1.png" alt="Frame 1" style={{width: '350px', borderRadius: '20px', marginBottom: '20px'}} />
 
             <h1 style={{
-              fontSize: '1.8rem',
+              fontSize: '2.8rem',
               margin: '15px 0 10px 0',
-              fontWeight: '700'
+              fontWeight: '900'
             }}>{cv.fullName || 'اسم المرشح'}</h1>
             <p style={{
-              fontSize: '1.4rem',
+              fontSize: '2.2rem',
               color: 'white',
-              fontWeight: '500',
+              fontWeight: '700',
               margin: '0 0 20px 0'
             }}>{cv.fullNameArabic || cv.fullName || 'الاسم بالعربية'}</p>
 
@@ -616,76 +612,50 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
 
           {/* Passport Section */}
           <section style={{ width: '100%', marginBottom: '25px' }}>
-            <div style={{
-              width: '300px',
-              height: '50px',
-              backgroundColor: '#43dacb',
-              borderRadius: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 15px',
-              fontSize: '1.3rem',
-              fontWeight: 'bold'
-            }}>
-              بيانات جواز السفر
-            </div>
+            <img src="/2.png" alt="Frame 2" style={{width: '350px', borderRadius: '20px', marginBottom: '15px',marginRight: '100px',}} />
 
             <div>
-              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.1rem' }}>
-                <span style={{ fontWeight: '500' }}>الرقم</span>
-                <span style={{ fontWeight: '400', textAlign: 'left' }}>{cv.passportNumber || 'غير محدد'}</span>
+              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.8rem' }}>
+                <span style={{ fontWeight: '700' }}>الرقم</span>
+                <span style={{ fontWeight: '600', textAlign: 'left' }}>{cv.passportNumber || 'غير محدد'}</span>
               </p>
-              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.1rem' }}>
-                <span style={{ fontWeight: '500' }}>تاريخ الاصدار</span>
-                <span style={{ fontWeight: '400', textAlign: 'left' }}>{cv.passportIssueDate || 'غير محدد'}</span>
+              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.8rem' }}>
+                <span style={{ fontWeight: '700' }}>تاريخ الاصدار</span>
+                <span style={{ fontWeight: '600', textAlign: 'left' }}>{cv.passportIssueDate || 'غير محدد'}</span>
               </p>
-              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.1rem' }}>
-                <span style={{ fontWeight: '500' }}>تاريخ الانتهاء</span>
-                <span style={{ fontWeight: '400', textAlign: 'left' }}>{cv.passportExpiryDate || 'غير محدد'}</span>
+              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.8rem' }}>
+                <span style={{ fontWeight: '700' }}>تاريخ الانتهاء</span>
+                <span style={{ fontWeight: '600', textAlign: 'left' }}>{cv.passportExpiryDate || 'غير محدد'}</span>
               </p>
-              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.1rem' }}>
-                <span style={{ fontWeight: '500' }}>مكان الاصدار</span>
-                <span style={{ fontWeight: '400', textAlign: 'left' }}>{cv.passportIssuePlace || 'غير محدد'}</span>
+              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.8rem' }}>
+                <span style={{ fontWeight: '700' }}>مكان الاصدار</span>
+                <span style={{ fontWeight: '600', textAlign: 'left' }}>{cv.passportIssuePlace || 'غير محدد'}</span>
               </p>
             </div>
           </section>
 
           {/* Experience Section */}
           <section style={{ width: '100%', marginBottom: '25px' }}>
-            <div style={{
-              width: '300px',
-              height: '50px',
-              backgroundColor: '#43dacb',
-              borderRadius: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 15px',
-              fontSize: '1.3rem',
-              fontWeight: 'bold'
-            }}>
-              الخبرة السابقة
-            </div>
+            <img src="/3.png" alt="Frame 3" style={{width: '350px', borderRadius: '20px', marginBottom: '15px',marginRight: '100px',}} />
             <div>
-              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.1rem' }}>
-                <span style={{ fontWeight: '500' }}>البلد</span>
-                <span style={{ fontWeight: '400', textAlign: 'left' }}>{cv.preferredCountry || 'السعودية'}</span>
+              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.8rem' }}>
+                <span style={{ fontWeight: '700' }}>البلد</span>
+                <span style={{ fontWeight: '600', textAlign: 'left' }}>{cv.preferredCountry || 'السعودية'}</span>
               </p>
-              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.1rem' }}>
-                <span style={{ fontWeight: '500' }}>المدة</span>
-                <span style={{ fontWeight: '400', textAlign: 'left' }}>{cv.workExperienceYears || cv.contractPeriod || 'غير محدد'}</span>
+              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.8rem' }}>
+                <span style={{ fontWeight: '700' }}>المدة</span>
+                <span style={{ fontWeight: '600', textAlign: 'left' }}>{cv.workExperienceYears || cv.contractPeriod || 'غير محدد'}</span>
               </p>
               {cv.lastEmployer && (
-                <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.1rem' }}>
-                  <span style={{ fontWeight: '500' }}>آخر صاحب عمل</span>
-                  <span style={{ fontWeight: '400', textAlign: 'left' }}>{cv.lastEmployer}</span>
+                <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.8rem' }}>
+                  <span style={{ fontWeight: '700' }}>آخر صاحب عمل</span>
+                  <span style={{ fontWeight: '600', textAlign: 'left' }}>{cv.lastEmployer}</span>
                 </p>
               )}
               {cv.reasonForLeaving && (
-                <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.1rem' }}>
-                  <span style={{ fontWeight: '500' }}>سبب ترك العمل</span>
-                  <span style={{ fontWeight: '400', textAlign: 'left' }}>{cv.reasonForLeaving}</span>
+                <p style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '1.8rem' }}>
+                  <span style={{ fontWeight: '700' }}>سبب ترك العمل</span>
+                  <span style={{ fontWeight: '600', textAlign: 'left' }}>{cv.reasonForLeaving}</span>
                 </p>
               )}
             </div>
@@ -705,52 +675,14 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
               height: '160px',
               margin: '0 auto 20px',
               borderRadius: '15px',
-              overflow: 'hidden',
               border: '3px solid #43dacb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#f8f9fa'
+              backgroundColor: '#ffffff',
+              fontSize: '6rem'
             }}>
-              {cv.nationality ? (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {/* العلم فقط - بحجم كبير وواضح */}
-                  <div 
-                    className="flag-emoji"
-                    style={{
-                      fontSize: '8rem',
-                      lineHeight: '1',
-                      fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-                      textAlign: 'center',
-                      filter: 'none',
-                      WebkitFontSmoothing: 'antialiased',
-                      MozOsxFontSmoothing: 'grayscale',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '100%',
-                      height: '100%',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    {getCountryFlag(cv.nationality)}
-                  </div>
-                </div>
-              ) : (
-                <div style={{
-                  fontSize: '1.2rem',
-                  color: '#666',
-                  textAlign: 'center'
-                }}>
-                  علم الدولة
-                </div>
-              )}
+              🇪🇹
             </div>
             
             {/* Reference Code */}
@@ -762,20 +694,53 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
               fontSize: '1.4rem',
               fontWeight: 'bold',
               letterSpacing: '2px',
-              margin: '0 auto',
+              margin: '0 auto 15px',
               maxWidth: '300px'
             }}>
               CODE: {cv.referenceCode || 'غير محدد'}
             </div>
+
+            {/* Video Button */}
+            {cv.videoLink && setSelectedVideo && (
+              <button
+                onClick={() => setSelectedVideo(cv.videoLink!)}
+                style={{
+                  backgroundColor: '#e74c3c',
+                  color: 'white',
+                  padding: '12px 20px',
+                  borderRadius: '20px',
+                  border: 'none',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  margin: '0 auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#c0392b';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e74c3c';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                🎥 مشاهدة الفيديو
+              </button>
+            )}
           </div>
         </aside>
 
         {/* Main Content - الجزء الأيسر للمعلومات */}
         <main style={{
           padding: '30px',    // المساحة الأصلية
-          width: '875px',     // العرض الأصلي (1459 - 584 = 875px)
+          width: '950px',     // عرض أكبر
           backgroundColor: '#f8f9fa',
-          height: '2048px',   // الارتفاع الأصلي
+          height: '2500px',   // ارتفاع أكبر
           overflow: 'auto'
         }}>
           {/* Header */}
@@ -827,13 +792,13 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
             }}>
               <span style={{
                 display: 'block',
-                fontSize: '1.1rem',
+                fontSize: '1.6rem',
                 color: 'hsl(0, 0%, 47%)',
                 marginBottom: '5px'
               }}>الوظيفة المطلوبة</span>
               <span style={{
-                fontSize: '1.3rem',
-                fontWeight: '700',
+                fontSize: '2rem',
+                fontWeight: '900',
                 color: 'hsl(207, 77%, 45%)'
               }}>{cv.position || 'عاملة منزلية'}</span>
             </div>
@@ -848,13 +813,13 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
             }}>
               <span style={{
                 display: 'block',
-                fontSize: '1.1rem',
+                fontSize: '1.6rem',
                 color: 'hsl(0, 0%, 47%)',
                 marginBottom: '5px'
               }}>الدولة المطلوبة</span>
               <span style={{
-                fontSize: '1.3rem',
-                fontWeight: '700',
+                fontSize: '2rem',
+                fontWeight: '900',
                 color: 'hsl(207, 77%, 45%)'
               }}>{cv.preferredCountry || 'السعودية'}</span>
             </div>
@@ -869,43 +834,25 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
             }}>
               <span style={{
                 display: 'block',
-                fontSize: '1.1rem',
+                fontSize: '1.6rem',
                 color: 'hsl(0, 0%, 47%)',
                 marginBottom: '5px'
               }}>الراتب الشهري</span>
               <span style={{
-                fontSize: '1.3rem',
-                fontWeight: '700',
+                fontSize: '2rem',
+                fontWeight: '900',
                 color: 'hsl(207, 77%, 45%)'
-              }}>{cv.monthlySalary || 'غير محدد'}</span>
+              }}>{cv.monthlySalary ? (cv.monthlySalary.includes('ريال') ? cv.monthlySalary : `${cv.monthlySalary} ريال`) : 'غير محدد'}</span>
             </div>
           </section>
 
           {/* Personal Info */}
           <section style={{ marginBottom: '12px' }}>
-            <fieldset style={{
-              border: '2px solid #43dacb',
-              borderRadius: '15px',
-              padding: '12px',  // مساحة أقل
-              margin: '0',
-              position: 'relative'
-            }}>
-              <legend style={{
-                backgroundColor: '#43dacb',
-                color: 'white',
-                padding: '8px 20px',
-                borderRadius: '20px',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                margin: '0 auto',
-                textAlign: 'center'
-              }}>
-                المعلومات الشخصية
-              </legend>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr',
-                gap: '8px'
+            <img src="/6.png" alt="Frame 6" style={{width: '700px', marginBottom: '10px', borderRadius: '20px'}} />
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '15px'
               }}>
               {[
                 { label: 'الجنسية', value: cv.nationality },
@@ -919,48 +866,30 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                 { label: 'الوزن', value: cv.weight },
                 { label: 'الطول', value: cv.height },
                 { label: 'لون البشرة', value: cv.complexion },
-                { label: 'الدرجة العلمية', value: cv.educationLevel || cv.education },
-                { label: 'البريد الإلكتروني', value: cv.email },
-                { label: 'رقم الهاتف', value: cv.phone }
+                { label: 'الدرجة العلمية', value: cv.educationLevel || cv.education }
               ].map((item, index) => (
-                <p key={index} style={{
+                <div key={index} style={{
                   background: '#fff',
-                  padding: '10px',
-                  borderRadius: '5px',
-                  borderRight: '4px solid hsl(207, 77%, 45%)',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  borderRight: '6px solid hsl(207, 77%, 45%)',
                   margin: 0,
                   display: 'flex',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '1.8rem',
+                  minHeight: '65px'
                 }}>
-                  <span style={{ fontWeight: '500' }}>{item.label}</span>
-                  <span style={{ fontWeight: '400' }}>{item.value || 'غير محدد'}</span>
-                </p>
+                  <span style={{ fontWeight: '700', color: 'hsl(207, 77%, 45%)' }}>{item.label}</span>
+                  <span style={{ fontWeight: '600', fontSize: '1.7rem' }}>{item.value || 'غير محدد'}</span>
+                </div>
               ))}
-              </div>
-            </fieldset>
+            </div>
           </section>
 
           {/* Languages */}
           <section style={{ marginBottom: '12px', marginTop: '8px' }}>
-            <fieldset style={{
-              border: '2px solid #43dacb',
-              borderRadius: '15px',
-              padding: '12px',  // مساحة أقل
-              margin: '0',
-              position: 'relative'
-            }}>
-              <legend style={{
-                backgroundColor: '#43dacb',
-                color: 'white',
-                padding: '8px 20px',
-                borderRadius: '20px',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                margin: '0 auto',
-                textAlign: 'center'
-              }}>
-                اللغات
-              </legend>
+            <img src="/5.png" alt="Frame 5" style={{width: '700px', marginBottom: '10px', marginTop: '20px', borderRadius: '20px'}} />
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr',
@@ -977,7 +906,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                 alignItems: 'center',
                 gap: '15px'
               }}>
-                <span style={{ fontWeight: '700' }}>الانجليزية</span>
+                <span style={{ fontWeight: '700', fontSize: '1.6rem' }}>الانجليزية</span>
                 <div style={{
                   width: '100%',
                   backgroundColor: '#e0e0e0',
@@ -992,7 +921,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                     width: getLanguageWidth(cv.englishLevel)
                   }}></div>
                 </div>
-                <span style={{ fontWeight: '400' }}>{getLanguageText(cv.englishLevel)}</span>
+                <span style={{ fontWeight: '600', fontSize: '1.4rem' }}>{getLanguageText(cv.englishLevel)}</span>
               </div>
               <div style={{
                 background: '#fff',
@@ -1005,7 +934,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                 alignItems: 'center',
                 gap: '15px'
               }}>
-                <span style={{ fontWeight: '700' }}>العربية</span>
+                <span style={{ fontWeight: '700', fontSize: '1.6rem' }}>العربية</span>
                 <div style={{
                   width: '100%',
                   backgroundColor: '#e0e0e0',
@@ -1020,39 +949,20 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                     width: getLanguageWidth(cv.arabicLevel)
                   }}></div>
                 </div>
-                <span style={{ fontWeight: '400' }}>{getLanguageText(cv.arabicLevel)}</span>
+                <span style={{ fontWeight: '600', fontSize: '1.4rem' }}>{getLanguageText(cv.arabicLevel)}</span>
               </div>
             </div>
-            </fieldset>
           </section>
 
           {/* Skills */}
           <section style={{ marginTop: '8px' }}>
-            <fieldset style={{
-              border: '2px solid #43dacb',
-              borderRadius: '15px',
-              padding: '12px',  // مساحة أقل
-              margin: '0',
-              position: 'relative'
-            }}>
-              <legend style={{
-                backgroundColor: '#43dacb',
-                color: 'white',
-                padding: '8px 20px',
-                borderRadius: '20px',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                margin: '0 auto',
-                textAlign: 'center'
-              }}>
-                المهارات والخبرات
-              </legend>
+            <img src="/4.png" alt="Frame 4" style={{width: '700px', marginBottom: '10px', marginTop: '20px', borderRadius: '20px'}} />
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '8px',
+              gap: '15px',
               alignItems: 'center',
-              paddingBottom: '10px'
+              paddingBottom: '15px'
             }}>
               {[
                 { label: 'رعاية الاطفال', value: cv.babySitting },
@@ -1062,104 +972,35 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                 { label: 'التنظيف', value: cv.cleaning },
                 { label: 'العمل المنزلي', value: cv.housekeeping },
                 { label: 'الغسيل', value: cv.washing },
-                { label: 'الطبخ العربي', value: cv.arabicCooking },
-                { label: 'الخياطة', value: cv.sewing },
-                { label: 'القيادة', value: cv.driving },
-                { label: 'رعاية المسنين', value: cv.elderCare },
-                { label: 'رعاية المعاقين', value: cv.disabledCare },
-                { label: 'التدريس', value: cv.tutoring },
-                { label: 'مستعدة للتعلم', value: 'نعم' }
+                { label: 'الطبخ العربي', value: cv.arabicCooking }
               ].map((skill, index) => (
                 <div key={index} style={{
                   backgroundColor: '#fff',
                   border: '1px solid hsl(0, 0%, 78%)',
-                  borderRadius: '8px',
-                  padding: '12px',
+                  borderRadius: '12px',
+                  padding: '20px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  fontSize: '0.95rem',
-                  fontWeight: '500'
+                  fontSize: '1.8rem',
+                  fontWeight: '700',
+                  minHeight: '65px'
                 }}>
                   <span>{skill.label}</span>
                   <span style={{
                     backgroundColor: getSkillLevel(skill.value) === 'نعم' ? '#2ecc71' : '#e74c3c',
                     color: 'white',
-                    padding: '3px 10px',
-                    borderRadius: '12px',
-                    fontSize: '0.8rem'
+                    padding: '8px 15px',
+                    borderRadius: '15px',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold'
                   }}>
                     {getSkillLevel(skill.value)}
                   </span>
                 </div>
               ))}
             </div>
-            </fieldset>
           </section>
-          {/* Experience and Notes */}
-          {(cv.experience || cv.previousEmployment || cv.summary || cv.notes) && (
-            <section style={{ marginTop: '8px' }}>
-              <fieldset style={{
-                border: '2px solid #43dacb',
-                borderRadius: '15px',
-                padding: '12px',  // مساحة أقل
-                margin: '0',
-                position: 'relative'
-              }}>
-                <legend style={{
-                  backgroundColor: '#43dacb',
-                  color: 'white',
-                  padding: '8px 20px',
-                  borderRadius: '20px',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  margin: '0 auto',
-                  textAlign: 'center'
-                }}>
-                  الخبرة والملاحظات
-                </legend>
-              <div style={{
-                background: '#fff',
-                padding: '10px',  // مساحة أقل
-                borderRadius: '5px',
-                margin: 0,
-                fontSize: '0.9rem',
-                lineHeight: '1.5'
-              }}>
-                {cv.experience && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>الخبرة العملية:</strong> {cv.experience}
-                  </div>
-                )}
-                {cv.previousEmployment && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>الخبرة السابقة:</strong> {cv.previousEmployment}
-                  </div>
-                )}
-                {cv.summary && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>الملخص:</strong> {cv.summary}
-                  </div>
-                )}
-                {cv.notes && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>ملاحظات:</strong> {cv.notes}
-                  </div>
-                )}
-                {cv.certificates && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>الشهادات:</strong> {cv.certificates}
-                  </div>
-                )}
-                {cv.references && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <strong>المراجع:</strong> {cv.references}
-                  </div>
-                )}
-              </div>
-              </fieldset>
-            </section>
-          )}
         </main>
       </div>
 
