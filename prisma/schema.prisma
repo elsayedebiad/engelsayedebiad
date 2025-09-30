@@ -1,0 +1,266 @@
+// prisma/schema.prisma
+// Updated Prisma schema for Al-Gaeid Recruitment CV Management System
+// Supports all fields from the Al-Gaeid CV template
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  createdCVs CV[]         @relation("CVCreatedBy")
+  updatedCVs CV[]         @relation("CVUpdatedBy")
+  activities ActivityLog[]
+  sessions   Session[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model CV {
+  id                 Int      @id @default(autoincrement())
+
+  // Basic Information
+  fullName           String
+  fullNameArabic     String?
+  email              String?
+  phone              String?
+  referenceCode      String?  @unique // Code like EA125
+
+  // Employment Details
+  monthlySalary      String?
+  contractPeriod     String?
+  position           String?
+
+  // Passport Information
+  passportNumber String? @unique
+  passportIssueDate  String?
+  passportExpiryDate String?
+  passportIssuePlace String?
+
+  // Personal Information
+  nationality        String?
+  religion           String?
+  dateOfBirth        String?
+  placeOfBirth       String?
+  livingTown         String?
+  maritalStatus      MaritalStatus?
+  numberOfChildren   Int?
+  weight             String?
+  height             String?
+  complexion         String?
+  age                Int?
+
+  // Languages and Education
+  englishLevel       SkillLevel?
+  arabicLevel        SkillLevel?
+  educationLevel     String?     // الدرجة العلمية
+
+  // Skills and Experiences (YES/NO/WILLING)
+  babySitting        SkillLevel?
+  childrenCare       SkillLevel?
+  tutoring           SkillLevel?
+  disabledCare       SkillLevel?
+  cleaning           SkillLevel?
+  washing            SkillLevel?
+  ironing            SkillLevel?
+  arabicCooking      SkillLevel?
+  sewing             SkillLevel?
+  driving            SkillLevel?
+  
+  // Additional Skills from Al-Gaeid Template
+  elderCare          SkillLevel?  // رعاية المسنين
+  housekeeping       SkillLevel?  // التدبير المنزلي
+  cooking            SkillLevel?  // الطبخ العام
+
+  // Previous Employment Abroad (JSON format)
+  previousEmployment String?   // JSON array of {period, country, position}
+
+  // Profile Image
+  profileImage       String?
+
+  // Video Link
+  videoLink          String?
+
+  // Legacy fields
+  experience         String?
+  education          String?
+  skills             String?
+  summary            String?
+  content            String?   // Rich text content
+  notes              String?
+  attachments        String?   // JSON array of file paths
+
+  // System fields
+  status             CVStatus  @default(NEW)
+  priority           Priority  @default(MEDIUM)
+  source             String?   // Manual, Excel, etc.
+
+  // Metadata
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdById        Int
+  updatedById        Int?
+
+  // Relations
+  createdBy          User      @relation("CVCreatedBy", fields: [createdById], references: [id])
+  updatedBy          User?     @relation("CVUpdatedBy", fields: [updatedById], references: [id])
+  activities         ActivityLog[]
+  versions           CVVersion[]
+  contract           Contract?
+
+  @@map("cvs")
+}
+
+model CVVersion {
+  id        Int      @id @default(autoincrement())
+  cvId      Int
+  content   String   // Snapshot of CV content
+  version   Int
+  createdAt DateTime @default(now())
+  createdBy Int
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@unique([cvId, version])
+  @@map("cv_versions")
+}
+
+model Contract {
+  id               Int      @id @default(autoincrement())
+  cvId             Int      @unique // Each CV can only have one contract
+  identityNumber   String
+  contractStartDate DateTime @default(now())
+  contractEndDate   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@map("contracts")
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  title       String
+  message     String
+  type        NotificationType
+  category    String   // "import", "cv", "user", "system"
+  data        String?  // JSON data with details
+  isRead      Boolean  @default(false)
+  userId      Int      // Admin user who should receive this
+  createdAt   DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  cvId        Int?
+  action      String       // free text action
+  description String
+  metadata    Json?        // JSON data
+  targetType  String?      // CV, CONTRACT, USER, SYSTEM
+  targetId    String?      // ID of the target entity
+  targetName  String?      // Name of the target entity
+  ipAddress   String?      // IP address of the user
+  userAgent   String?      // User agent string
+  createdAt   DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  cv   CV?  @relation(fields: [cvId], references: [id])
+
+  @@map("activity_logs")
+}
+
+enum Role {
+  ADMIN
+  SUB_ADMIN
+  USER
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum CVStatus {
+  NEW
+  BOOKED
+  HIRED
+  REJECTED
+  RETURNED
+  ARCHIVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum SkillLevel {
+  YES
+  NO
+  WILLING
+}
+
+enum ActivityType {
+  CV_CREATED
+  CV_UPDATED
+  CV_DELETED
+  CV_STATUS_CHANGED
+  CV_EXPORTED
+  USER_LOGIN
+  USER_LOGOUT
+  EXCEL_IMPORT
+}
+
+model SalesConfig {
+  id            String   @id @default(cuid())
+  salesPageId   String   @unique
+  whatsappNumber String  @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("sales_configs")
+}

@@ -1,0 +1,66 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+
+const db = new PrismaClient()
+
+// GET - جلب جميع السير الذاتية للمعرض العام
+export async function GET() {
+  try {
+    const cvs = await db.cV.findMany({
+      select: {
+        id: true,
+        fullName: true,
+        fullNameArabic: true,
+        email: true,
+        phone: true,
+        referenceCode: true,
+        monthlySalary: true,
+        contractPeriod: true,
+        position: true,
+        nationality: true,
+        maritalStatus: true,
+        age: true,
+        profileImage: true,
+        status: true,
+        priority: true,
+        babySitting: true,
+        childrenCare: true,
+        tutoring: true,
+        disabledCare: true,
+        cleaning: true,
+        washing: true,
+        ironing: true,
+        arabicCooking: true,
+        sewing: true,
+        driving: true,
+        experience: true,
+        arabicLevel: true,
+        englishLevel: true,
+        religion: true,
+        educationLevel: true,
+        passportNumber: true,
+        passportExpiryDate: true,
+        height: true,
+        weight: true,
+        numberOfChildren: true,
+        livingTown: true,
+        placeOfBirth: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { createdAt: 'desc' }
+      ]
+    })
+
+    return NextResponse.json(cvs)
+  } catch (error) {
+    console.error('Error fetching CVs for gallery:', error)
+    return NextResponse.json(
+      { error: 'فشل في جلب السير الذاتية' },
+      { status: 500 }
+    )
+  }
+}
+
