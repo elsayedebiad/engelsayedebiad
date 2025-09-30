@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CVStatus, Priority, SkillLevel } from '@prisma/client'
-import { Search, Filter, Eye, MessageCircle, Star, ChevronDown, Grid, List, Download, Play } from 'lucide-react'
+import { Search, Filter, Eye, MessageCircle, Star, ChevronDown, Grid, List, Download, Play, Settings } from 'lucide-react'
 import CountryFlag from '../../components/CountryFlag'
 import { getCountryInfo } from '../../lib/country-utils'
 import { getImageUrl, generateAvatarUrl } from '../../lib/image-utils'
+import toast from 'react-hot-toast'
 
 interface CV {
   id: string

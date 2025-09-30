@@ -3,6 +3,25 @@
  */
 
 /**
+ * دالة لتحويل روابط Google Drive إلى روابط مباشرة للصور
+ * @param url - رابط Google Drive
+ * @returns رابط مباشر للصورة
+ */
+const convertGoogleDriveUrl = (url: string): string => {
+  // استخراج ID الملف من رابط Google Drive
+  const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  
+  if (fileIdMatch && fileIdMatch[1]) {
+    const fileId = fileIdMatch[1];
+    // تحويل إلى رابط مباشر
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+  
+  // إذا لم يتم العثور على ID، ارجع الرابط الأصلي
+  return url;
+};
+
+/**
  * دالة لمعالجة وتنسيق URLs الصور لدعم جميع أنواع المسارات
  * @param imageUrl - رابط الصورة الأصلي
  * @returns رابط الصورة المُنسق أو null إذا لم يكن هناك صورة
@@ -11,6 +30,29 @@ export const getImageUrl = (imageUrl?: string): string | null => {
   if (!imageUrl || imageUrl.trim() === '') return null;
   
   const cleanUrl = imageUrl.trim();
+  
+  // معالجة روابط Google Drive
+  if (cleanUrl.includes('drive.google.com')) {
+    return convertGoogleDriveUrl(cleanUrl);
+  }
+  
+  // معالجة روابط Dropbox
+  if (cleanUrl.includes('dropbox.com')) {
+    if (cleanUrl.includes('?dl=0')) {
+      return cleanUrl.replace('?dl=0', '?raw=1');
+    }
+    if (!cleanUrl.includes('?raw=1') && !cleanUrl.includes('?dl=1')) {
+      return cleanUrl + '?raw=1';
+    }
+  }
+  
+  // معالجة روابط OneDrive
+  if (cleanUrl.includes('1drv.ms') || cleanUrl.includes('onedrive.live.com')) {
+    // تحويل روابط OneDrive إلى روابط مباشرة
+    if (cleanUrl.includes('?') && !cleanUrl.includes('&download=1')) {
+      return cleanUrl + '&download=1';
+    }
+  }
   
   // إذا كان URL يبدأ بـ http أو https، استخدمه مباشرة
   if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
@@ -27,26 +69,39 @@ export const getImageUrl = (imageUrl?: string): string | null => {
     return cleanUrl;
   }
   
+  // دالة مساعدة للحصول على origin بطريقة آمنة
+  const getOrigin = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    // fallback للخادم أو SSR
+    return '';
+  };
+  
   // إذا كان URL يبدأ بـ /uploads، أضف domain الموقع
   if (cleanUrl.startsWith('/uploads/') || cleanUrl.startsWith('uploads/')) {
     const normalizedUrl = cleanUrl.startsWith('/') ? cleanUrl : `/${cleanUrl}`;
-    return `${window.location.origin}${normalizedUrl}`;
+    const origin = getOrigin();
+    return origin ? `${origin}${normalizedUrl}` : normalizedUrl;
   }
   
   // إذا كان URL يبدأ بـ /public، أضف domain الموقع
   if (cleanUrl.startsWith('/public/') || cleanUrl.startsWith('public/')) {
     const normalizedUrl = cleanUrl.startsWith('/') ? cleanUrl : `/${cleanUrl}`;
-    return `${window.location.origin}${normalizedUrl}`;
+    const origin = getOrigin();
+    return origin ? `${origin}${normalizedUrl}` : normalizedUrl;
   }
   
   // إذا كان مجرد اسم ملف (بدون مسار)، أضف المسار الافتراضي
   if (!cleanUrl.includes('/') && !cleanUrl.includes('\\')) {
-    return `${window.location.origin}/uploads/images/${cleanUrl}`;
+    const origin = getOrigin();
+    return origin ? `${origin}/uploads/images/${cleanUrl}` : `/uploads/images/${cleanUrl}`;
   }
   
   // إذا كان يبدأ بـ / فقط، أضف domain
   if (cleanUrl.startsWith('/')) {
-    return `${window.location.origin}${cleanUrl}`;
+    const origin = getOrigin();
+    return origin ? `${origin}${cleanUrl}` : cleanUrl;
   }
   
   // في الحالات الأخرى، حاول استخدام URL كما هو
