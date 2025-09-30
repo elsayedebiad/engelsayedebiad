@@ -1,6 +1,5 @@
 import React from 'react';
 import { Play, X } from 'lucide-react';
-import OptimizedImage from '../OptimizedImage';
 
 // Interface للسيرة الذاتية
 interface CV {
@@ -82,7 +81,6 @@ interface QSOTemplateProps {
 }
 
 const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelectedVideo }) => {
-  
   
   // دالة لتحويل مستوى المهارة
   const getSkillLevel = (skill?: string) => {
@@ -563,15 +561,37 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
     borderBottomRightRadius: '250px',
     borderTop: '0',
             }}>
-              <OptimizedImage
-                src={cv.profileImage}
-                alt={cv.fullName || 'صورة شخصية'}
-                width={350}
-                height={400}
-                fallbackName={cv.fullName}
-                fill
-                priority
-              />
+              {cv.profileImage ? (
+                <img 
+                  src={cv.profileImage} 
+                  alt={cv.fullName || 'صورة شخصية'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  onError={(e) => {
+                    console.log('خطأ في تحميل الصورة:', cv.profileImage);
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    if (target.nextElementSibling) {
+                      (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                    }
+                  }}
+                />
+              ) : null}
+              <div style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: '#f0f0f0',
+                display: cv.profileImage ? 'none' : 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '3rem',
+                color: '#ccc'
+              }}>
+                👤
+              </div>
             </div>
 
             <img src="/1.png" alt="Frame 1" style={{width: '350px', borderRadius: '20px', marginBottom: '20px'}} />

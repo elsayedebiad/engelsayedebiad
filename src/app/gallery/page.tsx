@@ -2,10 +2,25 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'react-hot-toast'
 import { CVStatus, Priority, SkillLevel } from '@prisma/client'
-import { Search, Filter, Eye, MessageCircle, Star, ChevronDown, Grid, List, Download, Play, Settings, ArrowLeft, Grid3X3, Share2, X } from 'lucide-react'
-import OptimizedImage from '../../components/OptimizedImage'
-import toast from 'react-hot-toast'
+import { 
+  ArrowLeft, 
+  Eye, 
+  MessageCircle, 
+  Download, 
+  Search, 
+  Filter, 
+  Grid3X3, 
+  List, 
+  Settings,
+  Share2,
+  Copy,
+  ExternalLink,
+  Play,
+  X
+} from 'lucide-react'
+import CountryFlag from '../../components/CountryFlag'
 
 interface CV {
   id: string
@@ -616,14 +631,17 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                   <div className="space-y-4">
                     {/* Profile Image */}
                     <div className="flex justify-center">
-                      <OptimizedImage
-                        src={cv.profileImage}
-                        alt={cv.fullName}
-                        width={80}
-                        height={80}
-                        fallbackName={cv.fullName}
-                        className="rounded-full border-2 border-gray-200"
-                      />
+                      {cv.profileImage ? (
+                        <img
+                          src={cv.profileImage}
+                          alt={cv.fullName}
+                          className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-500 text-2xl">👤</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* CV Info */}
@@ -633,6 +651,7 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                         <p className="text-sm text-gray-600">{cv.fullNameArabic}</p>
                       )}
                       <div className="flex items-center justify-center gap-2">
+                        <CountryFlag nationality={cv.nationality || ''} />
                         <span className="text-sm text-gray-600">{cv.nationality}</span>
                       </div>
                       <p className="text-sm text-gray-600">{cv.position}</p>
@@ -707,14 +726,17 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                   // List View
                   <div className="flex items-center gap-4">
                     {/* Profile Image */}
-                    <OptimizedImage
-                      src={cv.profileImage}
-                      alt={cv.fullName}
-                      width={64}
-                      height={64}
-                      fallbackName={cv.fullName}
-                      className="rounded-full border-2 border-gray-200"
-                    />
+                    {cv.profileImage ? (
+                      <img
+                        src={cv.profileImage}
+                        alt={cv.fullName}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-500 text-xl">👤</span>
+                      </div>
+                    )}
 
                     {/* CV Info */}
                     <div className="flex-1 min-w-0">

@@ -2,52 +2,47 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'react-hot-toast'
 import { CVStatus, Priority, SkillLevel } from '@prisma/client'
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Download, 
-  Upload, 
-  User, 
-  Calendar, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  FileText, 
-  Star,
-  AlertCircle,
+import {
+  Search,
+  FileText,
+  User,
+  Edit,
+  Trash2,
+  Download,
+  Undo2,
+  RefreshCw,
+  Zap,
+  SlidersHorizontal, // ← أيقونة موحّدة للـ Slider menu
+  Globe,
+  Calendar,
+  Heart,
+  Loader2,
   CheckCircle,
-  Clock,
-  X,
-  Bookmark,
-  UserCheck,
+  AlertTriangle,
+  Sparkles,
   ChevronDown,
-  MoreHorizontal,
-  Copy,
-  ExternalLink,
+  ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
+  Bookmark,
   FileSignature,
   Play,
+  X,
   XCircle,
   BookOpen,
   DollarSign,
   Ruler,
   Scale,
   Baby,
-  SlidersHorizontal
+  Star,
 } from 'lucide-react'
-import OptimizedImage from '../../components/OptimizedImage'
 import DashboardLayout from '../../components/DashboardLayout'
 import BulkImageDownloader from '../../components/BulkImageDownloader'
 import CountryFlag from '../../components/CountryFlag'
 import { BulkActivityLogger, CVActivityLogger, ContractActivityLogger } from '../../lib/activity-logger'
 import { getCountryInfo } from '../../lib/country-utils'
-import toast from 'react-hot-toast'
 
 interface User {
   id: string
@@ -149,13 +144,6 @@ export default function CVsPage() {
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [contractingCv, setContractingCv] = useState<CV | null>(null)
   const [identityNumber, setIdentityNumber] = useState('')
-  
-  // حالات مودال الحجز
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
-  const [bookingCv, setBookingCv] = useState<CV | null>(null)
-  const [bookingIdentityNumber, setBookingIdentityNumber] = useState('')
-  const [bookingNotes, setBookingNotes] = useState('')
-  const [isBookingProcessing, setIsBookingProcessing] = useState(false)
 
   useEffect(() => {
     fetchCVs()
@@ -443,63 +431,6 @@ export default function CVsPage() {
       fetchCVs()
     } catch {
       toast.error('فشل تحديث الحالة')
-    }
-  }
-
-  // فتح مودال الحجز
-  const openBookingModal = (cv: CV) => {
-    setBookingCv(cv)
-    setBookingIdentityNumber('')
-    setBookingNotes('')
-    setIsBookingModalOpen(true)
-  }
-
-  // إغلاق مودال الحجز
-  const closeBookingModal = () => {
-    setIsBookingModalOpen(false)
-    setBookingCv(null)
-    setBookingIdentityNumber('')
-    setBookingNotes('')
-    setIsBookingProcessing(false)
-  }
-
-  // تأكيد الحجز
-  const confirmBooking = async () => {
-    if (!bookingCv || !bookingIdentityNumber.trim()) {
-      toast.error('يرجى إدخال رقم الهوية')
-      return
-    }
-
-    setIsBookingProcessing(true)
-    
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          cvId: bookingCv.id,
-          identityNumber: bookingIdentityNumber.trim(),
-          notes: bookingNotes.trim() || null
-        })
-      })
-
-      if (response.ok) {
-        toast.success('تم حجز السيرة الذاتية بنجاح')
-        closeBookingModal()
-        fetchCVs() // تحديث قائمة السير الذاتية
-      } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'فشل في حجز السيرة الذاتية')
-      }
-    } catch (error) {
-      console.error('Error booking CV:', error)
-      toast.error(error instanceof Error ? error.message : 'فشل في حجز السيرة الذاتية')
-    } finally {
-      setIsBookingProcessing(false)
     }
   }
 
@@ -1051,14 +982,13 @@ export default function CVsPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-3">
-                          <OptimizedImage
-                            src={cv.profileImage}
-                            alt={cv.fullName}
-                            width={40}
-                            height={40}
-                            fallbackName={cv.fullName}
-                            className="rounded-full flex-shrink-0"
-                          />
+                          {cv.profileImage ? (
+                            <img className="h-10 w-10 rounded-full object-cover flex-shrink-0" src={cv.profileImage} alt={cv.fullName} />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                              <User className="h-5 w-5 text-white" />
+                            </div>
+                          )}
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate">{cv.fullName}</div>
                             {cv.fullNameArabic && (
@@ -1159,7 +1089,7 @@ export default function CVsPage() {
                           {cv.status === CVStatus.NEW && (user?.role === 'ADMIN' || user?.role === 'SUB_ADMIN') && (
                           <>
                             <button
-                              onClick={() => openBookingModal(cv)}
+                              onClick={() => handleStatusChange(cv.id, CVStatus.BOOKED)}
                               className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg"
                               title="حجز"
                             >
@@ -1638,115 +1568,6 @@ export default function CVsPage() {
                 </video>
               )}
             </div>
-          </div>
-        </div>
-      </div>
-    )}
-
-    {/* مودال حجز السيرة الذاتية */}
-    {isBookingModalOpen && bookingCv && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">حجز سيرة ذاتية</h3>
-            <button
-              onClick={closeBookingModal}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-              disabled={isBookingProcessing}
-            >
-              <X className="h-6 w-6" />
-            </button>
-          </div>
-
-          <div className="mb-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <h4 className="font-medium text-gray-900 mb-2">معلومات السيرة الذاتية:</h4>
-              <div className="text-sm text-gray-700 space-y-1">
-                <p><span className="font-medium">الاسم:</span> {bookingCv.fullName}</p>
-                {bookingCv.fullNameArabic && (
-                  <p><span className="font-medium">الاسم بالعربية:</span> {bookingCv.fullNameArabic}</p>
-                )}
-                {bookingCv.position && (
-                  <p><span className="font-medium">الوظيفة:</span> {bookingCv.position}</p>
-                )}
-                {bookingCv.referenceCode && (
-                  <p><span className="font-medium">الكود المرجعي:</span> {bookingCv.referenceCode}</p>
-                )}
-                {bookingCv.nationality && (
-                  <p><span className="font-medium">الجنسية:</span> {bookingCv.nationality}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="bookingIdentityNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                رقم الهوية *
-              </label>
-              <input
-                type="text"
-                id="bookingIdentityNumber"
-                value={bookingIdentityNumber}
-                onChange={(e) => setBookingIdentityNumber(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                placeholder="أدخل رقم الهوية"
-                disabled={isBookingProcessing}
-                dir="ltr"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="bookingNotes" className="block text-sm font-medium text-gray-700 mb-2">
-                ملاحظات (اختياري)
-              </label>
-              <textarea
-                id="bookingNotes"
-                value={bookingNotes}
-                onChange={(e) => setBookingNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                placeholder="أدخل ملاحظات إضافية (اختياري)"
-                rows={3}
-                disabled={isBookingProcessing}
-                dir="rtl"
-              />
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-yellow-800">
-                <strong>تنبيه:</strong> عند التأكيد سيتم:
-              </p>
-              <ul className="text-xs text-yellow-700 mt-1 space-y-1">
-                <li>• حجز السيرة الذاتية برقم الهوية المحدد</li>
-                <li>• تحويل حالة السيرة الذاتية إلى "محجوز"</li>
-                <li>• إضافة الحجز إلى قائمة الحجوزات</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={closeBookingModal}
-              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
-              disabled={isBookingProcessing}
-            >
-              إلغاء
-            </button>
-            <button
-              onClick={confirmBooking}
-              className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-              disabled={isBookingProcessing || !bookingIdentityNumber.trim()}
-            >
-              {isBookingProcessing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  جاري الحجز...
-                </>
-              ) : (
-                <>
-                  <Bookmark className="h-4 w-4" />
-                  تأكيد الحجز
-                </>
-              )}
-            </button>
           </div>
         </div>
       </div>
