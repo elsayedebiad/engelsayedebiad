@@ -24,6 +24,7 @@ model User {
   // Relations
   createdCVs CV[]         @relation("CVCreatedBy")
   updatedCVs CV[]         @relation("CVUpdatedBy")
+  bookings   Booking[]    @relation("BookingBookedBy")
   activities ActivityLog[]
   sessions   Session[]
   notifications Notification[]
@@ -131,6 +132,7 @@ model CV {
   // Relations
   createdBy          User      @relation("CVCreatedBy", fields: [createdById], references: [id])
   updatedBy          User?     @relation("CVUpdatedBy", fields: [updatedById], references: [id])
+  booking            Booking?
   activities         ActivityLog[]
   versions           CVVersion[]
   contract           Contract?
@@ -150,6 +152,22 @@ model CVVersion {
 
   @@unique([cvId, version])
   @@map("cv_versions")
+}
+
+model Booking {
+  id             Int      @id @default(autoincrement())
+  cvId           Int      @unique // Each CV can only have one booking
+  identityNumber String
+  notes          String?
+  bookedAt       DateTime @default(now())
+  bookedById     Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  cv       CV   @relation(fields: [cvId], references: [id], onDelete: Cascade)
+  bookedBy User @relation("BookingBookedBy", fields: [bookedById], references: [id])
+
+  @@map("bookings")
 }
 
 model Contract {
