@@ -31,18 +31,16 @@ import {
   ExternalLink,
   ChevronRight,
   Image as ImageIcon,
-  Bookmark,
   FileSignature,
   Play,
-  X,
   XCircle,
   BookOpen,
   DollarSign,
   Ruler,
   Scale,
-  Baby,
-  Star,
+  Baby
 } from 'lucide-react'
+import OptimizedImage from '../../components/OptimizedImage'
 import DashboardLayout from '../../components/DashboardLayout'
 import BulkImageDownloader from '../../components/BulkImageDownloader'
 import CountryFlag from '../../components/CountryFlag'
