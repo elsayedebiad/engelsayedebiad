@@ -825,7 +825,7 @@ ${cv.fullNameArabic ? `الاسم بالعربية: ${cv.fullNameArabic}` : ''}
         ) : (
           <div className={
             viewMode === 'grid' 
-              ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-6'
+              ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6'
               : 'space-y-4'
           }>
             {filteredCvs.map((cv) => (
@@ -928,16 +928,20 @@ ${cv.fullNameArabic ? `الاسم بالعربية: ${cv.fullNameArabic}` : ''}
                           <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           <span className="hidden sm:inline ml-1">عرض</span>
                         </button>
-                        {cv.videoLink && (
-                          <button
-                            onClick={() => setSelectedVideo(cv.videoLink!)}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1.5 sm:py-2 px-1 sm:px-2 rounded text-[10px] sm:text-xs flex items-center justify-center transition-colors"
-                            title="مشاهدة الفيديو"
-                          >
-                            <Play className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                            <span className="hidden sm:inline ml-1">فيديو</span>
-                          </button>
-                        )}
+                        <button
+                          onClick={() => {
+                            if (cv.videoLink && cv.videoLink.trim() !== '') {
+                              setSelectedVideo(cv.videoLink);
+                            } else {
+                              alert('لا يوجد رابط فيديو لهذه السيرة');
+                            }
+                          }}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1.5 sm:py-2 px-1 sm:px-2 rounded text-[10px] sm:text-xs flex items-center justify-center transition-colors"
+                          title="مشاهدة الفيديو"
+                        >
+                          <Play className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          <span className="hidden sm:inline ml-1">فيديو</span>
+                        </button>
                       </div>
                     </div>
                   </>
@@ -994,6 +998,32 @@ ${cv.fullNameArabic ? `الاسم بالعربية: ${cv.fullNameArabic}` : ''}
                 {selectedVideo.includes('youtube.com') || selectedVideo.includes('youtu.be') ? (
                   <iframe
                     src={selectedVideo.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allowFullScreen
+                    title="فيديو السيرة الذاتية"
+                  />
+                ) : selectedVideo.includes('drive.google.com') ? (
+                  <iframe
+                    src={(() => {
+                      // تحويل رابط Google Drive إلى embed
+                      // مثال: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+                      // إلى: https://drive.google.com/file/d/FILE_ID/preview
+                      const fileIdMatch = selectedVideo.match(/\/file\/d\/([^\/]+)/);
+                      if (fileIdMatch && fileIdMatch[1]) {
+                        return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                      }
+                      // إذا كان الرابط بصيغة أخرى، حاول استخدامه كما هو
+                      return selectedVideo.replace('/view', '/preview').replace('?usp=sharing', '');
+                    })()}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allowFullScreen
+                    title="فيديو السيرة الذاتية"
+                  />
+                ) : selectedVideo.includes('vimeo.com') ? (
+                  <iframe
+                    src={selectedVideo.replace('vimeo.com/', 'player.vimeo.com/video/')}
                     className="w-full h-full rounded-lg"
                     frameBorder="0"
                     allowFullScreen

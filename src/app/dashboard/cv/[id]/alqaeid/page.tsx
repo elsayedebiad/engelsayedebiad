@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { toast, Toaster } from 'react-hot-toast'
-import AlqaeidTemplate from '../alqaeid-template'
+import QSOTemplate from '../../../../../components/cv-templates/qso-template'
 import { ArrowLeft, Download, Edit, Printer, FileText, Image } from 'lucide-react'
 import { getCountryInfo, getCountryGradient } from '../../../../../lib/country-utils'
 
@@ -244,7 +244,7 @@ export default function AlqaeidCvPage() {
       {/* CV Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden cv-template">
-          <AlqaeidTemplate cv={cv} />
+          <QSOTemplate cv={cv} />
         </div>
       </div>
 

@@ -25,12 +25,14 @@ import {
   ChevronDown,
   Share2,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Play
 } from 'lucide-react'
 import CountryFlag from '../../components/CountryFlag'
 
 interface CV {
   id: string
+  videoUrl?: string
   fullName: string
   fullNameArabic?: string
   email?: string
@@ -67,6 +69,7 @@ interface CV {
   numberOfChildren?: number
   livingTown?: string
   placeOfBirth?: string
+  videoLink?: string
 }
 
 export default function Sales5Page() {
@@ -102,6 +105,7 @@ export default function Sales5Page() {
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [whatsappNumber, setWhatsappNumber] = useState('')
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
   const salesPageId = 'sales5'
 
   // جلب رقم الواتساب
@@ -525,7 +529,7 @@ ${cv.age ? `🎂 العمر: ${cv.age} سنة` : ''}
             <p className="text-gray-600">لا توجد سير ذاتية متاحة حالياً</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {filteredCvs.map((cv) => (
               <div key={cv.id} className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all">
                 <div className="aspect-[3/4] relative overflow-hidden bg-gray-200">
@@ -573,6 +577,19 @@ ${cv.age ? `🎂 العمر: ${cv.age} سنة` : ''}
                     >
                       <Eye className="h-3 w-3" />
                     </button>
+                    <button
+                      onClick={() => {
+                        if (cv.videoLink && cv.videoLink.trim() !== '') {
+                          setSelectedVideo(cv.videoLink);
+                        } else {
+                          alert('لا يوجد رابط فيديو لهذه السيرة');
+                        }
+                      }}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-2 rounded text-xs flex items-center justify-center"
+                      title="مشاهدة الفيديو"
+                    >
+                      <Play className="h-3 w-3" />
+                    </button>
                     <button 
                       onClick={() => downloadSingleCV(cv)}
                       className="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 px-2 rounded text-xs flex items-center justify-center transition-colors"
@@ -594,6 +611,70 @@ ${cv.age ? `🎂 العمر: ${cv.age} سنة` : ''}
           </div>
         )}
       </div>
+      {/* Video Modal */}
+      {selectedVideo && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">فيديو السيرة الذاتية</h3>
+              <button
+                onClick={() => setSelectedVideo(null)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="aspect-video w-full">
+                {selectedVideo.includes('youtube.com') || selectedVideo.includes('youtu.be') ? (
+                  <iframe
+                    src={selectedVideo.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allowFullScreen
+                    title="فيديو السيرة الذاتية"
+                  />
+                ) : selectedVideo.includes('drive.google.com') ? (
+                  <iframe
+                    src={(() => {
+                      // تحويل رابط Google Drive إلى embed
+                      // مثال: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+                      // إلى: https://drive.google.com/file/d/FILE_ID/preview
+                      const fileIdMatch = selectedVideo.match(/\/file\/d\/([^\/]+)/);
+                      if (fileIdMatch && fileIdMatch[1]) {
+                        return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                      }
+                      // إذا كان الرابط بصيغة أخرى، حاول استخدامه كما هو
+                      return selectedVideo.replace('/view', '/preview').replace('?usp=sharing', '');
+                    })()}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allowFullScreen
+                    title="فيديو السيرة الذاتية"
+                  />
+                ) : selectedVideo.includes('vimeo.com') ? (
+                  <iframe
+                    src={selectedVideo.replace('vimeo.com/', 'player.vimeo.com/video/')}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allowFullScreen
+                    title="فيديو السيرة الذاتية"
+                  />
+                ) : (
+                  <video
+                    src={selectedVideo}
+                    controls
+                    className="w-full h-full rounded-lg"
+                    preload="metadata"
+                  >
+                    متصفحك لا يدعم تشغيل الفيديو
+                  </video>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

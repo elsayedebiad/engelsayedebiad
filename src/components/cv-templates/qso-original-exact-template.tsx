@@ -132,7 +132,6 @@ const QSOOriginalExactTemplate: React.FC<QSOOriginalExactTemplateProps> = ({ cv,
       justifyContent: 'center', 
       alignItems: 'center', 
       minHeight: '100vh',
-      fontWeight: 'bold',
       direction: 'rtl'
     }}>
       {/* Watermark */}

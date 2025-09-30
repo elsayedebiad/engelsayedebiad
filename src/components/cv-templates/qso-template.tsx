@@ -208,22 +208,22 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
     <div className="cv-container" style={{ 
       fontFamily: 'Cairo, Arial, sans-serif', 
       fontWeight: '700', 
-      fontSize: '1.3rem', 
+      fontSize: '1.3rem', // خط ثابت للطباعة
       backgroundColor: '#f5f5f5', 
       margin: 0, 
       padding: 0, 
       color: '#333', 
       direction: 'rtl',
-      width: '1459px',
-      height: '2048px',
+      width: '1459px',  // الأبعاد الأصلية
+      height: '2048px', // الأبعاد الأصلية
       overflow: 'hidden',
       position: 'relative'
     }}>
       {/* CV Container */}
       <div style={{
         display: 'flex',
-        width: '1459px',
-        height: '2048px',
+        width: '1459px',  // الأبعاد الأصلية
+        height: '2048px', // الأبعاد الأصلية
         backgroundColor: 'white',
         overflow: 'hidden',
         position: 'relative'
@@ -247,7 +247,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
               position: 'absolute',
               top: '2%',
               left: '2%',
-              width: '380px',
+              width: '380px',  // الحجم الأصلي
               height: 'auto',
               opacity: 0.15,
               transform: 'rotate(-25deg)',
@@ -356,7 +356,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
               position: 'absolute',
               top: '35%',
               left: '12%',
-              width: '365px',
+              width: '350px',
               height: 'auto',
               opacity: 0.14,
               transform: 'rotate(-18deg)',
@@ -384,71 +384,9 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
             alt="QSO Watermark"
             style={{
               position: 'absolute',
-              top: '32%',
-              right: '3%',
-              width: '375px',
-              height: 'auto',
-              opacity: 0.13,
-              transform: 'rotate(-25deg)',
-              userSelect: 'none',
-              pointerEvents: 'none'
-            }}
-          />
-          
-          {/* صف رابع */}
-          <img 
-            src="/watermark-new.png" 
-            alt="QSO Watermark"
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '5%',
-              width: '345px',
-              height: 'auto',
-              opacity: 0.12,
-              transform: 'rotate(-38deg)',
-              userSelect: 'none',
-              pointerEvents: 'none'
-            }}
-          />
-          <img 
-            src="/watermark-new.png" 
-            alt="QSO Watermark"
-            style={{
-              position: 'absolute',
-              top: '48%',
-              left: '40%',
-              width: '385px',
-              height: 'auto',
-              opacity: 0.14,
-              transform: 'rotate(-22deg)',
-              userSelect: 'none',
-              pointerEvents: 'none'
-            }}
-          />
-          <img 
-            src="/watermark-new.png" 
-            alt="QSO Watermark"
-            style={{
-              position: 'absolute',
-              top: '52%',
-              left: '75%',
-              width: '335px',
-              height: 'auto',
-              opacity: 0.11,
-              transform: 'rotate(-45deg)',
-              userSelect: 'none',
-              pointerEvents: 'none'
-            }}
-          />
-          <img 
-            src="/watermark-new.png" 
-            alt="QSO Watermark"
-            style={{
-              position: 'absolute',
               top: '46%',
               right: '2%',
-              width: '365px',
+              width: '325px',
               height: 'auto',
               opacity: 0.13,
               transform: 'rotate(-30deg)',
@@ -598,16 +536,17 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
             }}
           />
         </div>
-        {/* Sidebar */}
+        {/* Sidebar - الجزء الأيمن للصورة */}
         <aside style={{
           backgroundColor: '#2c3e50',
           color: 'white',
-          padding: '30px 20px',
+          padding: '30px 20px', // مساحة ثابتة
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          width: '584px',
-          height: '2048px'
+          width: '584px', // عرض ثابت للطباعة
+          minHeight: '2048px', // ارتفاع ثابت
+          order: 0 // ترتيب ثابت
         }}>
           {/* Profile Section */}
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
@@ -673,29 +612,6 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
               margin: '0 0 20px 0'
             }}>{cv.fullNameArabic || cv.fullName || 'الاسم بالعربية'}</p>
 
-            {/* Video Button */}
-            {cv.videoLink && (
-              <button
-                onClick={() => setSelectedVideo?.(cv.videoLink!)}
-                style={{
-                  marginTop: '15px',
-                  backgroundColor: '#e74c3c',
-                  color: 'white',
-                  border: 'none',
-                  padding: '10px 20px',
-                  borderRadius: '20px',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Play size={16} />
-                فيديو تعريفي
-              </button>
-            )}
           </div>
 
           {/* Passport Section */}
@@ -854,12 +770,12 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
           </div>
         </aside>
 
-        {/* Main Content */}
+        {/* Main Content - الجزء الأيسر للمعلومات */}
         <main style={{
-          padding: '30px',
-          width: '875px',
+          padding: '30px',    // المساحة الأصلية
+          width: '875px',     // العرض الأصلي (1459 - 584 = 875px)
           backgroundColor: '#f8f9fa',
-          height: '2048px',
+          height: '2048px',   // الارتفاع الأصلي
           overflow: 'auto'
         }}>
           {/* Header */}
@@ -867,13 +783,13 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '30px',
-            paddingBottom: '20px',
+            marginBottom: '15px',  // هامش أقل
+            paddingBottom: '10px', // هامش أقل
             borderBottom: '1px solid hsl(0, 0%, 78%)'
           }}>
             <div style={{
               width: '100%',
-              height: '180px',
+              height: '180px',  // ارتفاع أقل
               borderRadius: '15px',
               display: 'flex',
               alignItems: 'center',
@@ -897,14 +813,14 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
           <section style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '10px',
-            marginBottom: '20px'
+            gap: '8px',          // فجوة أقل
+            marginBottom: '12px' // هامش أقل
           }}>
             <div style={{
               backgroundColor: 'white',
               border: '1px solid hsl(0, 0%, 78%)',
               borderRadius: '10px',
-              padding: '15px',
+              padding: '10px',  // مساحة أقل
               textAlign: 'center',
               flexGrow: 1,
               boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
@@ -925,7 +841,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
               backgroundColor: 'white',
               border: '1px solid hsl(0, 0%, 78%)',
               borderRadius: '10px',
-              padding: '15px',
+              padding: '10px',  // مساحة أقل
               textAlign: 'center',
               flexGrow: 1,
               boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
@@ -946,7 +862,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
               backgroundColor: 'white',
               border: '1px solid hsl(0, 0%, 78%)',
               borderRadius: '10px',
-              padding: '15px',
+              padding: '10px',  // مساحة أقل
               textAlign: 'center',
               flexGrow: 1,
               boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
@@ -966,11 +882,11 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
           </section>
 
           {/* Personal Info */}
-          <section style={{ marginBottom: '20px' }}>
+          <section style={{ marginBottom: '12px' }}>
             <fieldset style={{
               border: '2px solid #43dacb',
               borderRadius: '15px',
-              padding: '20px',
+              padding: '12px',  // مساحة أقل
               margin: '0',
               position: 'relative'
             }}>
@@ -1025,11 +941,11 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
           </section>
 
           {/* Languages */}
-          <section style={{ marginBottom: '20px', marginTop: '15px' }}>
+          <section style={{ marginBottom: '12px', marginTop: '8px' }}>
             <fieldset style={{
               border: '2px solid #43dacb',
               borderRadius: '15px',
-              padding: '20px',
+              padding: '12px',  // مساحة أقل
               margin: '0',
               position: 'relative'
             }}>
@@ -1111,11 +1027,11 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
           </section>
 
           {/* Skills */}
-          <section style={{ marginTop: '15px' }}>
+          <section style={{ marginTop: '8px' }}>
             <fieldset style={{
               border: '2px solid #43dacb',
               borderRadius: '15px',
-              padding: '20px',
+              padding: '12px',  // مساحة أقل
               margin: '0',
               position: 'relative'
             }}>
@@ -1182,11 +1098,11 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
           </section>
           {/* Experience and Notes */}
           {(cv.experience || cv.previousEmployment || cv.summary || cv.notes) && (
-            <section style={{ marginTop: '20px' }}>
+            <section style={{ marginTop: '8px' }}>
               <fieldset style={{
                 border: '2px solid #43dacb',
                 borderRadius: '15px',
-                padding: '20px',
+                padding: '12px',  // مساحة أقل
                 margin: '0',
                 position: 'relative'
               }}>
@@ -1204,7 +1120,7 @@ const QSOTemplate: React.FC<QSOTemplateProps> = ({ cv, selectedVideo, setSelecte
                 </legend>
               <div style={{
                 background: '#fff',
-                padding: '15px',
+                padding: '10px',  // مساحة أقل
                 borderRadius: '5px',
                 margin: 0,
                 fontSize: '0.9rem',

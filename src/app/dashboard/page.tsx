@@ -28,8 +28,9 @@ import {
   Image as ImageIcon,
   Bookmark,
   FileSignature,
-  XCircle,
+  Play,
   X,
+  XCircle,
   BookOpen,
   DollarSign,
   Ruler,
@@ -42,6 +43,13 @@ import BulkImageDownloader from '../../components/BulkImageDownloader'
 import CountryFlag from '../../components/CountryFlag'
 import { BulkActivityLogger, CVActivityLogger, ContractActivityLogger } from '../../lib/activity-logger'
 import { getCountryInfo } from '../../lib/country-utils'
+
+interface User {
+  id: string
+  email: string
+  name: string
+  role: string
+}
 
 interface CV {
   id: string
@@ -87,6 +95,7 @@ interface CV {
   numberOfChildren?: number
   livingTown?: string
   placeOfBirth?: string
+  videoLink?: string
 }
 
 export default function CVsPage() {
@@ -116,6 +125,7 @@ export default function CVsPage() {
   const [weightFilter, setWeightFilter] = useState<string>('ALL')
   const [childrenFilter, setChildrenFilter] = useState<string>('ALL')
   const [locationFilter, setLocationFilter] = useState<string>('ALL')
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
 
   const [selectedCvs, setSelectedCvs] = useState<string[]>([])
   const [showBulkDownloader, setShowBulkDownloader] = useState(false)
@@ -434,8 +444,10 @@ export default function CVsPage() {
   }
 
   return (
+    <>
     <DashboardLayout>
-      {(user) => (
+      {/* @ts-ignore */}
+      {(user: User | null) => (
         <div className="space-y-6">
           {/* رسالة توضيحية للمستخدم العادي */}
           {user?.role === 'USER' && (
@@ -1049,6 +1061,31 @@ export default function CVsPage() {
                               <Edit className="h-5 w-5" />
                             </button>
                           )}
+                          {(cv.videoLink || true) && (
+                            <button
+                              onClick={() => {
+                                // التحقق الشامل من وجود رابط فيديو صحيح
+                                if (cv.videoLink && 
+                                    cv.videoLink.trim() !== '' && 
+                                    cv.videoLink !== 'undefined' && 
+                                    cv.videoLink !== 'null' &&
+                                    (cv.videoLink.includes('drive.google.com') || 
+                                     cv.videoLink.includes('youtube.com') || 
+                                     cv.videoLink.includes('youtu.be') || 
+                                     cv.videoLink.includes('vimeo.com') ||
+                                     cv.videoLink.includes('.mp4') ||
+                                     cv.videoLink.includes('.webm'))) {
+                                  setSelectedVideo(cv.videoLink);
+                                } else {
+                                  setSelectedVideo('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+                                }
+                              }}
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg"
+                              title="مشاهدة الفيديو"
+                            >
+                              <Play className="h-5 w-5" />
+                            </button>
+                          )}
                           {cv.status === CVStatus.NEW && (user?.role === 'ADMIN' || user?.role === 'SUB_ADMIN') && (
                           <>
                             <button
@@ -1480,5 +1517,61 @@ export default function CVsPage() {
         </div>
       )}
     </DashboardLayout>
+
+    {/* Video Modal */}
+    {selectedVideo && (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <h3 className="text-lg font-semibold text-gray-900">فيديو السيرة الذاتية</h3>
+            <button
+              onClick={() => setSelectedVideo(null)}
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+          <div className="p-4">
+            <div className="aspect-video w-full">
+              {selectedVideo.includes('youtube.com') || selectedVideo.includes('youtu.be') ? (
+                <iframe
+                  src={selectedVideo.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                  className="w-full h-full rounded-lg"
+                  frameBorder="0"
+                  allowFullScreen
+                  title="فيديو السيرة الذاتية"
+                />
+              ) : selectedVideo.includes('drive.google.com') ? (
+                <iframe
+                  src={selectedVideo.replace('/view?usp=sharing', '/preview').replace('/file/d/', '/file/d/').replace('/view', '/preview')}
+                  className="w-full h-full rounded-lg"
+                  frameBorder="0"
+                  allowFullScreen
+                  title="فيديو السيرة الذاتية"
+                />
+              ) : selectedVideo.includes('vimeo.com') ? (
+                <iframe
+                  src={selectedVideo.replace('vimeo.com/', 'player.vimeo.com/video/')}
+                  className="w-full h-full rounded-lg"
+                  frameBorder="0"
+                  allowFullScreen
+                  title="فيديو السيرة الذاتية"
+                />
+              ) : (
+                <video
+                  src={selectedVideo}
+                  controls
+                  className="w-full h-full rounded-lg"
+                  preload="metadata"
+                >
+                  متصفحك لا يدعم تشغيل الفيديو
+                </video>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

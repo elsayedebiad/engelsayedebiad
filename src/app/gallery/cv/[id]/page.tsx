@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import QSOTemplate from '../../../../components/cv-templates/qso-template'
-import { ArrowLeft, Download, Share2, MessageCircle, User, Calendar, Phone, Mail, MapPin, Star, Baby, Home, BookOpen, Car, Heart, GraduationCap, Users, Languages, Globe, Briefcase, Award } from 'lucide-react'
+import { ArrowLeft, Download, Share2, MessageCircle, User, Calendar, Phone, Mail, MapPin, Star, Baby, Home, BookOpen, Car, Heart, GraduationCap, Users, Languages, Globe, Briefcase, Award, Play, X } from 'lucide-react'
 
 // Enums
 enum SkillLevel {
@@ -186,47 +186,185 @@ export default function CVViewPage() {
   // التحميل التلقائي
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get('autoDownload') === 'true' && cv && !isLoading) {
+    if (urlParams.get('autoDownload') === 'true' && cv && !isLoading && isLoggedIn) {
       setHideUI(true)
       setTimeout(() => {
         downloadCV()
       }, 2000)
     }
-  }, [cv, isLoading])
+  }, [cv, isLoading, isLoggedIn])
 
-  // وظيفة التحميل
+  // وظيفة التحميل المحسنة - حل دقيق بالأبعاد الصحيحة
   const downloadCV = async () => {
     if (!cv || !cvRef.current) return
 
-    const toastId = toast.loading('جاري إنشاء صورة السيرة الذاتية...')
+    const toastId = toast.loading('جاري إنشاء صورة السيرة الذاتية بالأبعاد الصحيحة...')
 
     try {
-      // استيراد html2canvas بشكل ديناميكي
-      const html2canvas = (await import('html2canvas')).default
+      // استخدام puppeteer-like approach مع Canvas API
+      const element = cvRef.current
       
-      const canvas = await html2canvas(cvRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        width: 794,
-        height: 1123,
-        logging: false
-      })
+      // إنشاء canvas بالأبعاد الدقيقة المطلوبة
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      
+      if (!ctx) {
+        throw new Error('Canvas not supported')
+      }
 
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.href = url
-          link.download = `AlQaeid_CV_${cv.fullName}_${cv.referenceCode}.png`
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
-          URL.revokeObjectURL(url)
+      // الأبعاد الأصلية: 1459px x 2048px
+      canvas.width = 1459
+      canvas.height = 2048
+      
+      // خلفية بيضاء
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-          toast.success('تم تحميل السيرة الذاتية بنجاح', { id: toastId })
-        }
-      }, 'image/png', 0.9)
+      try {
+        // استخدام html2canvas مع الأبعاد الصحيحة
+        const { default: html2canvas } = await import('html2canvas')
+        
+        // إنشاء نسخة مؤقتة بالأبعاد المطلوبة
+        const tempDiv = document.createElement('div')
+        tempDiv.style.cssText = `
+          position: fixed;
+          left: -9999px;
+          top: 0;
+          width: 1459px;
+          height: 2048px;
+          background-color: #ffffff;
+          z-index: 9999;
+          overflow: visible;
+          padding: 40px;
+          box-sizing: border-box;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          line-height: 1.6;
+          font-size: 16px;
+        `
+        
+        // نسخ المحتوى مع تكبير النصوص
+        tempDiv.innerHTML = element.innerHTML
+        document.body.appendChild(tempDiv)
+
+        // تحسين جميع العناصر للأبعاد الجديدة
+        const allElements = tempDiv.querySelectorAll('*')
+        allElements.forEach((el) => {
+          if (el instanceof HTMLElement) {
+            // تكبير الخطوط
+            const currentFontSize = window.getComputedStyle(el).fontSize
+            const fontSize = parseFloat(currentFontSize)
+            if (fontSize > 0) {
+              el.style.fontSize = `${fontSize * 1.3}px`
+            }
+            
+            // تحسين المساحات
+            el.style.padding = el.style.padding ? `calc(${el.style.padding} * 1.3)` : '8px'
+            el.style.margin = el.style.margin ? `calc(${el.style.margin} * 1.3)` : '4px'
+            
+            // منع القطع
+            el.style.overflow = 'visible'
+            el.style.wordWrap = 'break-word'
+            el.style.whiteSpace = 'normal'
+            el.style.boxSizing = 'border-box'
+          }
+        })
+
+        // انتظار تطبيق التغييرات
+        await new Promise(resolve => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setTimeout(resolve, 1000)
+            })
+          })
+        })
+
+        const tempCanvas = await html2canvas(tempDiv, {
+          allowTaint: true,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          scale: 1, // لا نحتاج scale إضافي مع الأبعاد الصحيحة
+          logging: false,
+          width: 1459,
+          height: 2048,
+          windowWidth: 1459,
+          windowHeight: 2048,
+          x: 0,
+          y: 0,
+          scrollX: 0,
+          scrollY: 0,
+          foreignObjectRendering: false,
+          removeContainer: false,
+          imageTimeout: 30000,
+          onclone: (clonedDoc: Document) => {
+            const body = clonedDoc.body
+            if (body) {
+              body.style.margin = '0'
+              body.style.padding = '0'
+              body.style.width = '1459px'
+              body.style.height = '2048px'
+              body.style.overflow = 'visible'
+            }
+          }
+        })
+
+        // نسخ المحتوى إلى الكانفاس الرئيسي
+        ctx.drawImage(tempCanvas, 0, 0, 1459, 2048)
+
+        // إزالة العنصر المؤقت
+        document.body.removeChild(tempDiv)
+
+        // تحميل الصورة
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `AlQaeid_CV_${cv.fullName || 'Unknown'}_${cv.referenceCode || 'NoRef'}_1459x2048.png`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+
+            toast.success(`تم تحميل السيرة الذاتية بالأبعاد الصحيحة (1459x2048)`, { id: toastId })
+          } else {
+            throw new Error('Failed to create blob')
+          }
+        }, 'image/png', 1.0)
+
+      } catch (canvasError) {
+        console.error('Canvas capture failed:', canvasError)
+        
+        // fallback: استخدام الطريقة التقليدية
+        const { default: html2canvas } = await import('html2canvas')
+        
+        const fallbackCanvas = await html2canvas(element, {
+          allowTaint: true,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          scale: 2, // تكبير للوصول للأبعاد المطلوبة
+          logging: false,
+          width: 1459,
+          height: 2048,
+          windowWidth: 1459,
+          windowHeight: 2048
+        })
+
+        fallbackCanvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `AlQaeid_CV_${cv.fullName || 'Unknown'}_${cv.referenceCode || 'NoRef'}_fallback.png`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+
+            toast.success('تم تحميل السيرة الذاتية (نسخة احتياطية)', { id: toastId })
+          }
+        }, 'image/png', 1.0)
+      }
+
     } catch (error) {
       console.error('Error downloading CV:', error)
       toast.error('حدث خطأ أثناء تحميل السيرة الذاتية', { id: toastId })
@@ -359,410 +497,94 @@ export default function CVViewPage() {
       )}
 
       {/* محتوى السيرة الذاتية */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <div 
           ref={cvRef}
-          className="bg-white rounded-lg shadow-lg overflow-hidden"
-          style={{ width: '794px', minHeight: '1123px', margin: '0 auto', position: 'relative' }}
+          data-cv-container="true"
+          className="bg-white rounded-lg shadow-lg w-full max-w-[794px] mx-auto"
+          style={{ 
+            minHeight: '2700px', // ارتفاع يتناسب مع النسبة المطلوبة
+            position: 'relative',
+            overflow: 'visible',
+            boxSizing: 'border-box',
+            padding: '15px', // مساحة أقل للهاتف
+            border: 'none',
+            transform: 'none',
+            transformOrigin: 'top left',
+            wordWrap: 'break-word',
+            whiteSpace: 'normal',
+            lineHeight: '1.6',
+            fontSize: '14px' // خط أصغر للهاتف
+          }}
         >
-          {/* Watermark */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 10,
-            overflow: 'hidden',
-            pointerEvents: 'none'
-          }}>
-            {/* صف أول - الأعلى */}
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '5%',
-                left: '5%',
-                width: '200px',
-                height: 'auto',
-                opacity: 0.12,
-                transform: 'rotate(-25deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '8%',
-                right: '10%',
-                width: '180px',
-                height: 'auto',
-                opacity: 0.1,
-                transform: 'rotate(-35deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            
-            {/* صف ثاني */}
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '25%',
-                left: '15%',
-                width: '190px',
-                height: 'auto',
-                opacity: 0.11,
-                transform: 'rotate(-40deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '30%',
-                right: '5%',
-                width: '185px',
-                height: 'auto',
-                opacity: 0.12,
-                transform: 'rotate(-20deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            
-            {/* صف ثالث */}
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '8%',
-                width: '195px',
-                height: 'auto',
-                opacity: 0.1,
-                transform: 'rotate(-30deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '45%',
-                right: '12%',
-                width: '175px',
-                height: 'auto',
-                opacity: 0.11,
-                transform: 'rotate(-45deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            
-            {/* صف رابع */}
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '70%',
-                left: '12%',
-                width: '180px',
-                height: 'auto',
-                opacity: 0.12,
-                transform: 'rotate(-35deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '75%',
-                right: '8%',
-                width: '190px',
-                height: 'auto',
-                opacity: 0.1,
-                transform: 'rotate(-25deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            
-            {/* صف خامس - الأسفل */}
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '88%',
-                left: '10%',
-                width: '170px',
-                height: 'auto',
-                opacity: 0.11,
-                transform: 'rotate(-40deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-            <img 
-              src="/watermark-new.png" 
-              alt="QSO Watermark"
-              style={{
-                position: 'absolute',
-                top: '90%',
-                right: '15%',
-                width: '165px',
-                height: 'auto',
-                opacity: 0.12,
-                transform: 'rotate(-30deg)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-          </div>
-          {/* رأس السيرة الذاتية */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-8">
-            <div className="flex items-start gap-6">
-              {/* الصورة الشخصية */}
-              <div className="flex-shrink-0">
-                {cv.profileImage ? (
-                  <img
-                    src={cv.profileImage}
-                    alt={cv.fullName}
-                    className="w-32 h-32 rounded-full border-4 border-white object-cover"
-                  />
-                ) : (
-                  <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-300 flex items-center justify-center">
-                    <User className="w-16 h-16 text-gray-600" />
-                  </div>
-                )}
-              </div>
-
-              {/* المعلومات الأساسية */}
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-2">{cv.fullName}</h1>
-                {cv.fullNameArabic && (
-                  <h2 className="text-xl mb-3 opacity-90">{cv.fullNameArabic}</h2>
-                )}
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <CountryFlag nationality={cv.nationality || ''} size="md" />
-                    <span className="text-lg">{cv.nationality}</span>
-                  </div>
-                  {cv.age && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" />
-                      <span>{cv.age} سنة</span>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xl font-semibold mb-2">{cv.position || 'عاملة منزلية'}</p>
-                <p className="text-sm opacity-90">كود مرجعي: {cv.referenceCode}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* معلومات الاتصال */}
-          <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Phone className="w-5 h-5 text-blue-600" />
-              معلومات الاتصال
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              {cv.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <span>{cv.phone}</span>
-                </div>
-              )}
-              {cv.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-500" />
-                  <span>{cv.email}</span>
-                </div>
-              )}
-              {cv.livingTown && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span>{cv.livingTown}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* المهارات */}
-          <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Star className="w-5 h-5 text-blue-600" />
-              المهارات
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {cv.babySitting && cv.babySitting !== SkillLevel.NO && (
-                <div className="flex items-center gap-2">
-                  <Baby className="w-4 h-4 text-pink-500" />
-                  <span>رعاية الأطفال</span>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    cv.babySitting === SkillLevel.YES ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {cv.babySitting === SkillLevel.YES ? 'ممتاز' : 'مستعد للتعلم'}
-                  </span>
-                </div>
-              )}
-              {cv.cleaning && cv.cleaning !== SkillLevel.NO && (
-                <div className="flex items-center gap-2">
-                  <Home className="w-4 h-4 text-blue-500" />
-                  <span>التنظيف</span>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    cv.cleaning === SkillLevel.YES ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {cv.cleaning === SkillLevel.YES ? 'ممتاز' : 'مستعد للتعلم'}
-                  </span>
-                </div>
-              )}
-              {cv.arabicCooking && cv.arabicCooking !== SkillLevel.NO && (
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-orange-500" />
-                  <span>الطبخ العربي</span>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    cv.arabicCooking === SkillLevel.YES ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {cv.arabicCooking === SkillLevel.YES ? 'ممتاز' : 'مستعد للتعلم'}
-                  </span>
-                </div>
-              )}
-              {cv.driving && cv.driving !== SkillLevel.NO && (
-                <div className="flex items-center gap-2">
-                  <Car className="w-4 h-4 text-red-500" />
-                  <span>القيادة</span>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    cv.driving === SkillLevel.YES ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {cv.driving === SkillLevel.YES ? 'ممتاز' : 'مستعد للتعلم'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* المعلومات الشخصية */}
-          <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <User className="w-5 h-5 text-blue-600" />
-              المعلومات الشخصية
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              {cv.maritalStatus && (
-                <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-gray-500" />
-                  <span>الحالة الاجتماعية: {cv.maritalStatus}</span>
-                </div>
-              )}
-              {cv.religion && (
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-gray-500" />
-                  <span>الديانة: {cv.religion}</span>
-                </div>
-              )}
-              {cv.educationLevel && (
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-gray-500" />
-                  <span>التعليم: {cv.educationLevel}</span>
-                </div>
-              )}
-              {cv.numberOfChildren !== undefined && (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-gray-500" />
-                  <span>عدد الأطفال: {cv.numberOfChildren}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* اللغات */}
-          {(cv.arabicLevel || cv.englishLevel) && (
-            <div className="p-6 border-b">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Languages className="w-5 h-5 text-blue-600" />
-                اللغات
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                {cv.arabicLevel && (
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-gray-500" />
-                    <span>العربية: {cv.arabicLevel === SkillLevel.YES ? 'ممتاز' : 'متوسط'}</span>
-                  </div>
-                )}
-                {cv.englishLevel && (
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-gray-500" />
-                    <span>الإنجليزية: {cv.englishLevel === SkillLevel.YES ? 'ممتاز' : 'متوسط'}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* معلومات إضافية */}
-          {(cv.experience || cv.monthlySalary) && (
-            <div className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-blue-600" />
-                معلومات إضافية
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                {cv.experience && (
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-gray-500" />
-                    <span>الخبرة: {cv.experience}</span>
-                  </div>
-                )}
-                {cv.monthlySalary && (
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-gray-500" />
-                    <span>الراتب المطلوب: {cv.monthlySalary} ريال</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* تذييل السيرة الذاتية */}
-          <div className="bg-gray-50 p-6 text-center">
-            <div className="text-blue-600 font-semibold text-lg mb-2">الاسناد السريع</div>
-            <div className="text-gray-600 text-sm">للاستفسار والحجز: {whatsappNumber}</div>
-          </div>
+          <QSOTemplate cv={cv} selectedVideo={selectedVideo} setSelectedVideo={setSelectedVideo} />
         </div>
 
         {/* أزرار العمل - مخفية في حالة hideUI */}
         {!hideUI && (
-          <div className="mt-8 flex justify-center gap-4">
+          <div className="mt-4 sm:mt-8 flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 px-2">
             <button
               onClick={sendWhatsAppMessage}
-              className="flex items-center gap-3 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white px-8 py-4 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-110 hover:-translate-y-1 text-lg font-bold relative overflow-hidden group"
+              className="flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white px-4 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl hover:shadow-xl sm:hover:shadow-3xl transition-all duration-300 sm:duration-500 transform hover:scale-105 sm:hover:scale-110 hover:-translate-y-1 text-sm sm:text-lg font-bold relative overflow-hidden group w-full sm:w-auto"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <MessageCircle className="w-6 h-6 relative z-10" />
+              <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
               <span className="relative z-10">للحجز والطلب عبر واتساب</span>
             </button>
+            
+            {/* زر الفيديو التعريفي */}
+            {cv?.videoLink && (
+              <button
+                onClick={() => setSelectedVideo(cv.videoLink!)}
+                className="flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 hover:from-red-600 hover:via-pink-600 hover:to-rose-600 text-white px-4 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl hover:shadow-xl sm:hover:shadow-3xl transition-all duration-300 sm:duration-500 transform hover:scale-105 sm:hover:scale-110 hover:-translate-y-1 text-sm sm:text-lg font-bold relative overflow-hidden group w-full sm:w-auto"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Play className="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
+                <span className="relative z-10">فيديو تعريفي</span>
+              </button>
+            )}
           </div>
         )}
       </div>
+
+      {/* Video Modal */}
+      {selectedVideo && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">فيديو السيرة الذاتية</h3>
+              <button
+                onClick={() => setSelectedVideo(null)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="aspect-video w-full">
+                {selectedVideo.includes('youtube.com') || selectedVideo.includes('youtu.be') ? (
+                  <iframe
+                    src={selectedVideo.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allowFullScreen
+                    title="فيديو السيرة الذاتية"
+                  />
+                ) : (
+                  <video
+                    src={selectedVideo}
+                    controls
+                    className="w-full h-full rounded-lg"
+                    preload="metadata"
+                  >
+                    متصفحك لا يدعم تشغيل الفيديو
+                  </video>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

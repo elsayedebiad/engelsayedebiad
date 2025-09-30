@@ -28,25 +28,34 @@ import CountryFlag from '../../../components/CountryFlag'
 import { CVActivityLogger } from '../../../lib/activity-logger'
 import { getCountryInfo } from '../../../lib/country-utils'
 
-interface CV {
-  id: string
-  fullName: string
-  position?: string
-  referenceCode?: string
-  nationality?: string
-  contract?: { identityNumber: string } | null
-  contractDate?: string
-  updatedAt?: string
+interface Contract {
+  id: number
+  cvId: number
+  identityNumber: string
+  contractStartDate: string
+  contractEndDate?: string | null
+  createdAt: string
+  updatedAt: string
+  cv: {
+    id: number
+    fullName: string
+    fullNameArabic?: string
+    referenceCode?: string
+    nationality?: string
+    position?: string
+    profileImage?: string
+    status: string
+  }
 }
 
 export default function ContractsPage() {
-  const [contracts, setContracts] = useState<CV[]>([])
-  const [filteredContracts, setFilteredContracts] = useState<CV[]>([])
+  const [contracts, setContracts] = useState<Contract[]>([])
+  const [filteredContracts, setFilteredContracts] = useState<Contract[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedContracts, setSelectedContracts] = useState<string[]>([])
   const [showCancelModal, setShowCancelModal] = useState(false)
-  const [selectedContract, setSelectedContract] = useState<CV | null>(null)
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
   const router = useRouter()
 
@@ -85,10 +94,10 @@ export default function ContractsPage() {
     if (searchTerm) {
       const lowercasedTerm = searchTerm.toLowerCase()
       filtered = contracts.filter(
-        (cv) =>
-          cv.fullName.toLowerCase().includes(lowercasedTerm) ||
-          (cv.contract?.identityNumber &&
-            cv.contract.identityNumber.toLowerCase().includes(lowercasedTerm))
+        (contract) =>
+          contract.cv.fullName.toLowerCase().includes(lowercasedTerm) ||
+          contract.identityNumber.toLowerCase().includes(lowercasedTerm) ||
+          (contract.cv.referenceCode && contract.cv.referenceCode.toLowerCase().includes(lowercasedTerm))
       )
     }
     setFilteredContracts(filtered)
@@ -102,28 +111,12 @@ export default function ContractsPage() {
         router.push('/login')
         return
       }
-      const response = await fetch('/api/cvs?status=HIRED', {
+      const response = await fetch('/api/contracts', {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (response.ok) {
         const data = await response.json()
-        // إضافة تواريخ ثابتة للعقود إذا لم تكن موجودة (بتوقيت مصر الصحيح)
-        const contractsWithDates = (data.cvs || []).map((cv: CV) => {
-          if (!cv.contractDate) {
-            return {
-              ...cv,
-              contractDate: null
-            }
-          }
-          
-          // تحويل التاريخ إلى كائن Date
-          const contractDate = new Date(cv.contractDate)
-          return {
-            ...cv,
-            contractDate: contractDate.toISOString()
-          }
-        })
-        setContracts(contractsWithDates)
+        setContracts(data || [])
       } else {
         toast.error('فشل في تحميل العقود')
       }
@@ -135,7 +128,7 @@ export default function ContractsPage() {
   }
 
   // فتح مودال إلغاء التعاقد
-  const openCancelModal = (contract: CV) => {
+  const openCancelModal = (contract: Contract) => {
     setSelectedContract(contract)
     setShowCancelModal(true)
   }
@@ -157,7 +150,7 @@ export default function ContractsPage() {
       const token = localStorage.getItem('token')
       
       // البحث عن التعاقد أولاً
-      const contractsResponse = await fetch(`/api/contracts?cvId=${selectedContract.id}`, {
+      const contractsResponse = await fetch(`/api/contracts?cvId=${selectedContract.cv.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       
@@ -166,7 +159,7 @@ export default function ContractsPage() {
       }
       
       const contractsData = await contractsResponse.json()
-      const contract = contractsData.find((c: any) => c.cvId === parseInt(selectedContract.id))
+      const contract = contractsData.find((c: any) => c.cvId === selectedContract.cv.id)
       
       if (!contract) {
         throw new Error('التعاقد غير موجود')
@@ -194,9 +187,9 @@ export default function ContractsPage() {
     }
   }
 
-  const handleReturnContract = async (cvId: string) => {
-    const cv = contracts.find(c => c.id === cvId)
-    if (!confirm(`هل أنت متأكد من استرجاع عقد ${cv?.fullName}؟`)) return
+  const handleReturnContract = async (cvId: number) => {
+    const contract = contracts.find(c => c.cv.id === cvId)
+    if (!confirm(`هل أنت متأكد من استرجاع عقد ${contract?.cv.fullName}؟`)) return
     
     try {
       const token = localStorage.getItem('token')
@@ -210,8 +203,8 @@ export default function ContractsPage() {
       })
       if (response.ok) {
         // تسجيل النشاط
-        if (cv) {
-          CVActivityLogger.statusChanged(cvId, cv.fullName, 'متعاقد', 'معاد')
+        if (contract) {
+          CVActivityLogger.statusChanged(cvId.toString(), contract.cv.fullName, 'متعاقد', 'معاد')
         }
         
         toast.success('تم استرجاع العقد بنجاح. ستظهر السيرة الآن في الصفحة الرئيسية.')
@@ -265,7 +258,7 @@ export default function ContractsPage() {
     if (selectedContracts.length === filteredContracts.length) {
       setSelectedContracts([])
     } else {
-      setSelectedContracts(filteredContracts.map((cv) => cv.id))
+      setSelectedContracts(filteredContracts.map((contract) => contract.id.toString()))
     }
   }
 
@@ -342,11 +335,11 @@ export default function ContractsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredContracts.map((cv) => (
+                {filteredContracts.map((contract) => (
                   <tr
-                    key={cv.id}
+                    key={contract.id}
                     className={`hover:bg-gray-50 ${
-                      selectedContracts.includes(cv.id) ? 'bg-indigo-50' : ''
+                      selectedContracts.includes(contract.id.toString()) ? 'bg-indigo-50' : ''
                     }`}
                   >
                     {user?.role === 'ADMIN' && (
@@ -354,8 +347,8 @@ export default function ContractsPage() {
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                          checked={selectedContracts.includes(cv.id)}
-                          onChange={() => toggleSelection(cv.id)}
+                          checked={selectedContracts.includes(contract.id.toString())}
+                          onChange={() => toggleSelection(contract.id.toString())}
                         />
                       </td>
                     )}
@@ -368,27 +361,27 @@ export default function ContractsPage() {
                           <div
                             className="text-sm font-medium text-gray-900 hover:text-indigo-600 cursor-pointer transition-colors duration-200 hover:underline"
                             onClick={() => {
-                              CVActivityLogger.viewed(cv.id, cv.fullName)
-                              router.push(`/dashboard/cv/${cv.id}/alqaeid`)
+                              CVActivityLogger.viewed(contract.cv.id.toString(), contract.cv.fullName)
+                              router.push(`/dashboard/cv/${contract.cv.id}/alqaeid`)
                             }}
                             title="اضغط لعرض السيرة الذاتية"
                           >
-                            {cv.fullName}
+                            {contract.cv.fullName}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {cv.referenceCode}
+                            {contract.cv.referenceCode || 'غير محدد'}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {cv.contract?.identityNumber || 'غير متوفر'}
+                      {contract.identityNumber || 'غير متوفر'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {cv.position}
+                      {contract.cv.position || 'غير محدد'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <CountryFlag nationality={cv.nationality || ''} size="md" />
+                      <CountryFlag nationality={contract.cv.nationality || ''} size="md" />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 space-y-2 border border-gray-200">
@@ -396,13 +389,13 @@ export default function ContractsPage() {
                           <div className="bg-indigo-100 rounded-full p-1 ml-2">
                             <Calendar className="h-3 w-3 text-indigo-600" />
                           </div>
-                          <span className="font-semibold text-xs">{formatDateTime(cv.contractDate || cv.updatedAt).date}</span>
+                          <span className="font-semibold text-xs">{formatDateTime(contract.contractStartDate || contract.createdAt).date}</span>
                         </div>
                         <div className="flex items-center text-gray-700">
                           <div className="bg-green-100 rounded-full p-1 ml-2">
                             <Clock className="h-3 w-3 text-green-600" />
                           </div>
-                          <span className="text-xs font-medium">{formatDateTime(cv.contractDate || cv.updatedAt).time}</span>
+                          <span className="text-xs text-gray-600">{formatDateTime(contract.contractStartDate || contract.createdAt).time}</span>
                         </div>
                         <div className="text-xs text-gray-500 text-center pt-1 border-t border-gray-300">
                           تاريخ التعاقد (توقيت مصر)
@@ -411,16 +404,24 @@ export default function ContractsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-3">
-                        <button onClick={() => router.push(`/dashboard/cv/${cv.id}`)} className="text-gray-500 hover:text-indigo-600" title="عرض التفاصيل"><Edit className="h-4 w-4" /></button>
-                        <button onClick={() => window.open(`/api/cvs/${cv.id}/export-alqaeid`, '_blank')} className="text-gray-500 hover:text-blue-600" title="تصدير العقد"><Download className="h-4 w-4" /></button>
+                        <button 
+                          onClick={() => {
+                            CVActivityLogger.viewed(contract.cv.id.toString(), contract.cv.fullName)
+                            router.push(`/dashboard/cv/${contract.cv.id}/alqaeid`)
+                          }} 
+                          className="text-gray-500 hover:text-indigo-600" 
+                          title="عرض السيرة الذاتية"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                         {user?.role !== 'USER' && (
-                          <button onClick={() => openCancelModal(cv)} className="text-gray-500 hover:text-red-600" title="إلغاء التعاقد"><X className="h-4 w-4" /></button>
-                        )}
-                        {user?.role !== 'USER' && (
-                          <button onClick={() => handleReturnContract(cv.id)} className="text-gray-500 hover:text-orange-600" title="استرجاع العقد"><Undo2 className="h-4 w-4" /></button>
-                        )}
-                        {user?.role === 'ADMIN' && (
-                          <button onClick={() => handleDelete([cv.id])} className="text-gray-500 hover:text-red-600" title="حذف العقد نهائياً"><Trash2 className="h-4 w-4" /></button>
+                          <button 
+                            onClick={() => openCancelModal(contract)} 
+                            className="text-gray-500 hover:text-red-600" 
+                            title="إلغاء التعاقد"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
                         )}
                       </div>
                     </td>
@@ -464,9 +465,9 @@ export default function ContractsPage() {
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                     <h4 className="font-medium text-gray-900 mb-2">معلومات التعاقد:</h4>
                     <div className="text-sm text-gray-700 space-y-1">
-                      <p><span className="font-medium">الاسم:</span> {selectedContract.fullName}</p>
-                      <p><span className="font-medium">رقم الهوية:</span> {selectedContract.contract?.identityNumber || 'غير محدد'}</p>
-                      <p><span className="font-medium">الكود المرجعي:</span> {selectedContract.referenceCode}</p>
+                      <p><span className="font-medium">الاسم:</span> {selectedContract.cv.fullName}</p>
+                      <p><span className="font-medium">رقم الهوية:</span> {selectedContract.identityNumber || 'غير محدد'}</p>
+                      <p><span className="font-medium">الكود المرجعي:</span> {selectedContract.cv.referenceCode || 'غير محدد'}</p>
                     </div>
                   </div>
 

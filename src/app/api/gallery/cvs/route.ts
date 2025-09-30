@@ -3,10 +3,13 @@ import { PrismaClient } from '@prisma/client'
 
 const db = new PrismaClient()
 
-// GET - جلب جميع السير الذاتية للمعرض العام
+// GET - جلب السير الذاتية المتاحة فقط (NEW status) للمعرض وصفحات السيلز
 export async function GET() {
   try {
     const cvs = await db.cV.findMany({
+      where: {
+        status: 'NEW' // فقط السير الذاتية المتاحة (غير محجوزة وغير متعاقدة)
+      },
       select: {
         id: true,
         fullName: true,
@@ -21,6 +24,7 @@ export async function GET() {
         maritalStatus: true,
         age: true,
         profileImage: true,
+        videoLink: true, // إضافة حقل الفيديو
         status: true,
         priority: true,
         babySitting: true,
@@ -54,6 +58,7 @@ export async function GET() {
       ]
     })
 
+    console.log(`Found ${cvs.length} available CVs (NEW status only)`)
     return NextResponse.json(cvs)
   } catch (error) {
     console.error('Error fetching CVs for gallery:', error)

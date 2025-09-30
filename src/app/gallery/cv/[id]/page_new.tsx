@@ -120,7 +120,7 @@ export default function PublicCvPage() {
       const html2canvas = (await import('html2canvas')).default
       
       // البحث عن عنصر القالب
-      const element = document.querySelector('.alqaeid-template')
+      const element = document.querySelector('.cv-container')
       if (!element) {
         toast.error('لم يتم العثور على القالب')
         return

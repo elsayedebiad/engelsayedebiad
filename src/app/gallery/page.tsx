@@ -226,23 +226,208 @@ ${cv.referenceCode ? `🆔 الكود المرجعي: ${cv.referenceCode}` : ''}
     window.open(whatsappUrl, '_blank')
   }
 
-  // تحميل سيرة ذاتية واحدة
+  // تحميل سيرة ذاتية واحدة - تحميل مباشر محسن
   const downloadSingleCV = async (cv: CV) => {
-    if (isLoggedIn) {
-      // للمسجلين: فتح صفحة العرض مع التحميل التلقائي
-      const cvUrl = `/cv/${cv.id}?autoDownload=true`
-      const cvWindow = window.open(cvUrl, '_blank', 'width=1200,height=800')
-      
-      // إغلاق تلقائي بعد 5 ثوان
-      setTimeout(() => {
-        if (cvWindow) cvWindow.close()
-      }, 5000)
-      
-      toast.success('تم فتح قالب القعيد - سيتم التحميل تلقائياً')
-    } else {
-      // للزوار: نسخة تجريبية
-      toast('يرجى تسجيل الدخول للحصول على قالب القعيد الكامل')
+    const toastId = toast.loading('جاري إنشاء صورة السيرة الذاتية...')
+
+    try {
+      if (isLoggedIn) {
+        // للمسجلين: محاولة تحميل مباشر من API أولاً
+        try {
+          const token = localStorage.getItem('token')
+          const response = await fetch(`/api/cv/${cv.id}/alqaeid-image`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          
+          if (response.ok) {
+            const blob = await response.blob()
+            if (blob.size > 5000) { // التحقق من أن الملف ليس فارغاً
+              const url = URL.createObjectURL(blob)
+              const link = document.createElement('a')
+              link.href = url
+              link.download = `AlQaeid_CV_${cv.fullName}_${cv.referenceCode}.png`
+              document.body.appendChild(link)
+              link.click()
+              document.body.removeChild(link)
+              URL.revokeObjectURL(url)
+              
+              toast.success('تم تحميل قالب القعيد الكامل', { id: toastId })
+              return
+            }
+          }
+        } catch (apiError) {
+          console.warn('API download failed, using fallback:', apiError)
+        }
+        
+        // fallback: فتح صفحة العرض مع التحميل التلقائي
+        const cvUrl = `/gallery/cv/${cv.id}?autoDownload=true`
+        const cvWindow = window.open(cvUrl, '_blank', 'width=1200,height=800')
+        
+        setTimeout(() => {
+          if (cvWindow) cvWindow.close()
+        }, 5000)
+        
+        toast.success('تم فتح القالب للتحميل', { id: toastId })
+      } else {
+        // للزوار: إنشاء نسخة تجريبية مباشرة
+        await createTrialCvImage(cv)
+        toast.success('تم تحميل النسخة التجريبية', { id: toastId })
+      }
+    } catch (error) {
+      console.error('Download failed:', error)
+      toast.error('حدث خطأ أثناء التحميل', { id: toastId })
     }
+  }
+
+  // إنشاء نسخة تجريبية محسنة للزوار
+  const createTrialCvImage = async (cv: CV) => {
+    return new Promise<void>((resolve, reject) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Canvas not supported'))
+        return
+      }
+
+      // إعداد الكانفاس بالأبعاد الأصلية
+      canvas.width = 1459  // الأبعاد الأصلية
+      canvas.height = 2048  // الأبعاد الأصلية
+      
+      // خلفية بيضاء
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      
+      // رأس السيرة الذاتية مع تدرج
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0)
+      gradient.addColorStop(0, '#2563eb')
+      gradient.addColorStop(1, '#3730a3')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, canvas.width, 300)
+      
+      // النص الأبيض في الرأس - مكبر للأبعاد الجديدة
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 48px Arial'
+      ctx.textAlign = 'center'
+      ctx.fillText(cv.fullName || 'سيرة ذاتية', canvas.width / 2, 90)
+      
+      ctx.font = '36px Arial'
+      ctx.fillText(cv.nationality || '', canvas.width / 2, 150)
+      ctx.fillText(cv.position || 'عاملة منزلية', canvas.width / 2, 195)
+      ctx.fillText(`كود مرجعي: ${cv.referenceCode || ''}`, canvas.width / 2, 240)
+      
+      // المحتوى الرئيسي مع مساحة أكبر - مكبر للأبعاد الجديدة
+      ctx.fillStyle = '#1f2937'
+      ctx.font = '32px Arial'
+      ctx.textAlign = 'right'
+      
+      let y = 400
+      const rightMargin = canvas.width - 80
+      const lineHeight = 60
+      
+      // عنوان القسم
+      ctx.fillStyle = '#2563eb'
+      ctx.font = 'bold 36px Arial'
+      ctx.fillText('المعلومات الشخصية', rightMargin, y)
+      y += lineHeight + 20
+      
+      ctx.fillStyle = '#1f2937'
+      ctx.font = '30px Arial'
+      
+      // معلومات أساسية مع مساحة أكبر
+      if (cv.age) {
+        ctx.fillText(`العمر: ${cv.age} سنة`, rightMargin, y)
+        y += lineHeight
+      }
+      
+      if (cv.maritalStatus) {
+        ctx.fillText(`الحالة الاجتماعية: ${cv.maritalStatus}`, rightMargin, y)
+        y += lineHeight
+      }
+      
+      if (cv.religion) {
+        ctx.fillText(`الديانة: ${cv.religion}`, rightMargin, y)
+        y += lineHeight
+      }
+      
+      if (cv.educationLevel) {
+        ctx.fillText(`التعليم: ${cv.educationLevel}`, rightMargin, y)
+        y += lineHeight
+      }
+      
+      // إضافة معلومات إضافية
+      if (cv.experience) {
+        y += 30
+        ctx.fillStyle = '#2563eb'
+        ctx.font = 'bold 36px Arial'
+        ctx.fillText('الخبرة', rightMargin, y)
+        y += lineHeight
+        
+        ctx.fillStyle = '#1f2937'
+        ctx.font = '30px Arial'
+        ctx.fillText(`${cv.experience}`, rightMargin, y)
+        y += lineHeight
+      }
+      
+      // علامات مائية متعددة للنسخة التجريبية - مكبرة للأبعاد الجديدة
+      ctx.save()
+      ctx.globalAlpha = 0.15
+      ctx.fillStyle = '#ef4444'
+      ctx.font = 'bold 60px Arial'
+      ctx.textAlign = 'center'
+      
+      // علامة مائية مركزية
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+      ctx.rotate(-Math.PI / 6)
+      ctx.fillText('نسخة تجريبية', 0, -40)
+      ctx.fillText('للنسخة الكاملة سجل دخولك', 0, 40)
+      ctx.restore()
+      
+      // علامات مائية إضافية
+      ctx.save()
+      ctx.globalAlpha = 0.1
+      ctx.fillStyle = '#3730a3'
+      ctx.font = 'bold 45px Arial'
+      ctx.textAlign = 'center'
+      
+      // علامة علوية
+      ctx.translate(canvas.width / 2, 500)
+      ctx.rotate(-Math.PI / 8)
+      ctx.fillText('الاسناد السريع', 0, 0)
+      ctx.restore()
+      
+      // علامة سفلية
+      ctx.save()
+      ctx.translate(canvas.width / 2, canvas.height - 300)
+      ctx.rotate(Math.PI / 8)
+      ctx.fillText('نسخة تجريبية', 0, 0)
+      ctx.restore()
+      
+      // تذييل محسن - مكبر للأبعاد الجديدة
+      ctx.fillStyle = '#6b7280'
+      ctx.font = 'bold 30px Arial'
+      ctx.textAlign = 'center'
+      ctx.fillText('الاسناد السريع', canvas.width / 2, canvas.height - 100)
+      
+      ctx.font = '24px Arial'
+      ctx.fillText('للحصول على النسخة الكاملة يرجى تسجيل الدخول', canvas.width / 2, canvas.height - 50)
+      
+      // تحميل الصورة
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `Trial_CV_${cv.fullName || 'Unknown'}.png`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          resolve()
+        } else {
+          reject(new Error('Failed to create blob'))
+        }
+      }, 'image/png', 1.0)
+    })
   }
 
   // مشاركة سيرة ذاتية
@@ -255,7 +440,7 @@ ${cv.referenceCode ? `🆔 الكود المرجعي: ${cv.referenceCode}` : ''}
 ${cv.age ? `🎂 العمر: ${cv.age} سنة` : ''}
 ${cv.referenceCode ? `🆔 الكود المرجعي: ${cv.referenceCode}` : ''}
 
-🌐 رابط السيرة: ${window.location.origin}/cv/${cv.id}
+🌐 رابط السيرة: ${window.location.origin}/gallery/cv/${cv.id}
 ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''}
 
 #الاسناد_السريع #عمالة_منزلية`
@@ -264,7 +449,7 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
       navigator.share({
         title: `سيرة ذاتية - ${cv.fullName}`,
         text: shareText,
-        url: `${window.location.origin}/cv/${cv.id}`
+        url: `${window.location.origin}/gallery/cv/${cv.id}`
       })
     } else {
       navigator.clipboard.writeText(shareText)
@@ -316,13 +501,15 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                 {filteredCvs.length} سيرة ذاتية
               </span>
               
-              <button
-                onClick={() => router.push('/gallery/settings')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">الإعدادات</span>
-              </button>
+              {isLoggedIn && (
+                <button
+                  onClick={() => router.push('/gallery/settings')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">الإعدادات</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -477,12 +664,13 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                     {/* Action Buttons */}
                     <div className="flex gap-2">
                       <button
-                        onClick={() => router.push(`/cv/${cv.id}`)}
+                        onClick={() => router.push(`/gallery/cv/${cv.id}`)}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                       >
                         <Eye className="h-4 w-4" />
                         عرض
                       </button>
+                      
                       <button
                         onClick={() => downloadSingleCV(cv)}
                         className={`${
@@ -499,9 +687,25 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                       >
                         <Share2 className="h-4 w-4" />
                       </button>
-                      {cv.videoLink && (
+                      {(cv.videoLink || true) && (
                         <button
-                          onClick={() => setSelectedVideo(cv.videoLink!)}
+                          onClick={() => {
+                            // التحقق الشامل من وجود رابط فيديو صحيح
+                            if (cv.videoLink && 
+                                cv.videoLink.trim() !== '' && 
+                                cv.videoLink !== 'undefined' && 
+                                cv.videoLink !== 'null' &&
+                                (cv.videoLink.includes('drive.google.com') || 
+                                 cv.videoLink.includes('youtube.com') || 
+                                 cv.videoLink.includes('youtu.be') || 
+                                 cv.videoLink.includes('vimeo.com') ||
+                                 cv.videoLink.includes('.mp4') ||
+                                 cv.videoLink.includes('.webm'))) {
+                              setSelectedVideo(cv.videoLink);
+                            } else {
+                              setSelectedVideo('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+                            }
+                          }}
                           className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
                         >
                           <Play className="h-4 w-4" />
@@ -544,7 +748,7 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => router.push(`/cv/${cv.id}`)}
+                        onClick={() => router.push(`/gallery/cv/${cv.id}`)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                       >
                         عرض
@@ -565,15 +769,6 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                       >
                         مشاركة
                       </button>
-                      {cv.videoLink && (
-                        <button
-                          onClick={() => setSelectedVideo(cv.videoLink!)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                        >
-                          <Play className="h-4 w-4" />
-                          فيديو
-                        </button>
-                      )}
                       <button
                         onClick={() => sendWhatsAppMessage(cv)}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -607,6 +802,32 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                 {selectedVideo.includes('youtube.com') || selectedVideo.includes('youtu.be') ? (
                   <iframe
                     src={selectedVideo.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allowFullScreen
+                    title="فيديو السيرة الذاتية"
+                  />
+                ) : selectedVideo.includes('drive.google.com') ? (
+                  <iframe
+                    src={(() => {
+                      // تحويل رابط Google Drive إلى embed
+                      // مثال: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+                      // إلى: https://drive.google.com/file/d/FILE_ID/preview
+                      const fileIdMatch = selectedVideo.match(/\/file\/d\/([^\/]+)/);
+                      if (fileIdMatch && fileIdMatch[1]) {
+                        return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                      }
+                      // إذا كان الرابط بصيغة أخرى، حاول استخدامه كما هو
+                      return selectedVideo.replace('/view', '/preview').replace('?usp=sharing', '');
+                    })()}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allowFullScreen
+                    title="فيديو السيرة الذاتية"
+                  />
+                ) : selectedVideo.includes('vimeo.com') ? (
+                  <iframe
+                    src={selectedVideo.replace('vimeo.com/', 'player.vimeo.com/video/')}
                     className="w-full h-full rounded-lg"
                     frameBorder="0"
                     allowFullScreen

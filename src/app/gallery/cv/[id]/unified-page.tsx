@@ -8,7 +8,7 @@ import {
   Download, 
   MessageCircle
 } from 'lucide-react'
-import AlqaeidTemplate from '../../../dashboard/cv/[id]/alqaeid-template'
+import QSOTemplate from '../../../../components/cv-templates/qso-template'
 
 // استخدام نفس interface من القالب الأصلي
 interface CV { 
@@ -347,7 +347,7 @@ ${cv.fullNameArabic ? `📝 الاسم بالعربية: ${cv.fullNameArabic}` :
 
       {/* القالب الأصلي */}
       <div className="cv-container">
-        <AlqaeidTemplate cv={cv} />
+        <QSOTemplate cv={cv} />
       </div>
 
       {/* إشعار العلامة المائية */}
