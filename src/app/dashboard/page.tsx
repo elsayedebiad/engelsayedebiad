@@ -38,7 +38,8 @@ import {
   DollarSign,
   Ruler,
   Scale,
-  Baby
+  Baby,
+  SlidersHorizontal
 } from 'lucide-react'
 import OptimizedImage from '../../components/OptimizedImage'
 import DashboardLayout from '../../components/DashboardLayout'
@@ -46,6 +47,7 @@ import BulkImageDownloader from '../../components/BulkImageDownloader'
 import CountryFlag from '../../components/CountryFlag'
 import { BulkActivityLogger, CVActivityLogger, ContractActivityLogger } from '../../lib/activity-logger'
 import { getCountryInfo } from '../../lib/country-utils'
+import toast from 'react-hot-toast'
 
 interface User {
   id: string

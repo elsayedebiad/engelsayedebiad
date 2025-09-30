@@ -34,6 +34,11 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
   // معالجة URL الصورة
   const processedSrc = getImageUrl(src)
+  
+  // تحقق من صحة البيانات
+  if (!alt) {
+    console.warn('OptimizedImage: alt text is required for accessibility');
+  }
 
   // إذا لم يكن هناك صورة أو حدث خطأ، استخدم Avatar
   if (!processedSrc || imageError) {
@@ -91,7 +96,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
           setIsLoading(false)
         }}
         // إعدادات إضافية لـ Vercel
-        unoptimized={processedSrc.includes('drive.google.com') || processedSrc.includes('dropbox.com')}
+        unoptimized={processedSrc?.includes('drive.google.com') || processedSrc?.includes('dropbox.com') || processedSrc?.startsWith('data:')}
       />
     </div>
   )

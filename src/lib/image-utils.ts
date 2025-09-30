@@ -129,6 +129,10 @@ export const validateImageUrl = (imageUrl: string): Promise<boolean> => {
  * @returns رابط صورة SVG
  */
 export const generateAvatarUrl = (name: string, size: number = 200): string => {
+  if (!name || name.trim() === '') {
+    name = 'User';
+  }
+  
   const initials = name
     .split(' ')
     .map(word => word.charAt(0))
@@ -155,7 +159,14 @@ export const generateAvatarUrl = (name: string, size: number = 200): string => {
     </svg>
   `;
   
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  // استخدام Buffer في Node.js أو btoa في المتصفح
+  if (typeof window === 'undefined') {
+    // بيئة الخادم
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+  } else {
+    // بيئة المتصفح
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  }
 };
 
 /**
