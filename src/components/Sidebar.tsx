@@ -27,7 +27,8 @@ import {
   FileSpreadsheet,
   Store,
   ExternalLink,
-  Calendar
+  Calendar,
+  Bookmark
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -118,6 +119,12 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
       label: 'حالات السير الذاتية',
       icon: UserCheck,
       children: [
+        {
+          id: 'bookings',
+          label: 'الحجوزات',
+          icon: Bookmark,
+          href: '/dashboard/bookings'
+        },
         {
           id: 'booked',
           label: 'محجوز',
