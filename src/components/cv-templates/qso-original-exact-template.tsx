@@ -1,6 +1,6 @@
 import React from 'react';
 import { Play, X } from 'lucide-react';
-import { getImageUrl } from '../../lib/image-utils';
+import OptimizedImage from '../OptimizedImage';
 
 // Interface للسيرة الذاتية
 interface CV {
@@ -199,38 +199,15 @@ const QSOOriginalExactTemplate: React.FC<QSOOriginalExactTemplateProps> = ({ cv,
               borderBottomRightRadius: '2100px',
               borderBottomLeftRadius: '2100px'
             }}>
-              {getImageUrl(cv.profileImage) ? (
-                <img 
-                  src={getImageUrl(cv.profileImage)!} 
-                  alt={cv.fullName}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
-                  onError={(e) => {
-                    console.log('خطأ في تحميل الصورة:', getImageUrl(cv.profileImage));
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    if (target.nextElementSibling) {
-                      (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                    }
-                  }}
-                />
-              ) : (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: '#f0f0f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '3rem',
-                  color: '#ccc'
-                }}>
-                  👤
-                </div>
-              )}
+              <OptimizedImage
+                src={cv.profileImage}
+                alt={cv.fullName}
+                width={200}
+                height={250}
+                fallbackName={cv.fullName}
+                fill
+                priority
+              />
             </div>
 
             {/* Frame 1 */}

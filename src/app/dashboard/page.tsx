@@ -2,28 +2,33 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { toast } from 'react-hot-toast'
 import { CVStatus, Priority, SkillLevel } from '@prisma/client'
-import {
-  Search,
-  FileText,
-  User,
-  Edit,
-  Trash2,
-  Download,
-  Undo2,
-  RefreshCw,
-  Zap,
-  SlidersHorizontal, // ← أيقونة موحّدة للـ Slider menu
-  Globe,
-  Calendar,
-  Heart,
-  Loader2,
+import { 
+  Search, 
+  Filter, 
+  Plus, 
+  Eye, 
+  Edit, 
+  Trash2, 
+  Download, 
+  Upload, 
+  User, 
+  Calendar, 
+  MapPin, 
+  Phone, 
+  Mail, 
+  FileText, 
+  Star,
+  AlertCircle,
   CheckCircle,
-  AlertTriangle,
-  Sparkles,
+  Clock,
+  X,
+  Bookmark,
+  UserCheck,
   ChevronDown,
-  ChevronLeft,
+  MoreHorizontal,
+  Copy,
+  ExternalLink,
   ChevronRight,
   Image as ImageIcon,
   Bookmark,
@@ -1046,13 +1051,14 @@ export default function CVsPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-3">
-                          {cv.profileImage ? (
-                            <img className="h-10 w-10 rounded-full object-cover flex-shrink-0" src={cv.profileImage} alt={cv.fullName} />
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                              <User className="h-5 w-5 text-white" />
-                            </div>
-                          )}
+                          <OptimizedImage
+                            src={cv.profileImage}
+                            alt={cv.fullName}
+                            width={40}
+                            height={40}
+                            fallbackName={cv.fullName}
+                            className="rounded-full flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-gray-900 truncate">{cv.fullName}</div>
                             {cv.fullNameArabic && (

@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CVStatus, Priority, SkillLevel } from '@prisma/client'
-import { Search, Filter, Eye, MessageCircle, Star, ChevronDown, Grid, List, Download, Play, Settings } from 'lucide-react'
-import CountryFlag from '../../components/CountryFlag'
-import { getCountryInfo } from '../../lib/country-utils'
-import { getImageUrl, generateAvatarUrl } from '../../lib/image-utils'
+import { Search, Filter, Eye, MessageCircle, Star, ChevronDown, Grid, List, Download, Play, Settings, ArrowLeft, Grid3X3, Share2, X } from 'lucide-react'
+import OptimizedImage from '../../components/OptimizedImage'
 import toast from 'react-hot-toast'
 
 interface CV {
@@ -618,21 +616,14 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                   <div className="space-y-4">
                     {/* Profile Image */}
                     <div className="flex justify-center">
-                      {getImageUrl(cv.profileImage) ? (
-                        <img
-                          src={getImageUrl(cv.profileImage)!}
-                          alt={cv.fullName}
-                          className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = generateAvatarUrl(cv.fullName, 80);
-                          }}
-                        />
-                      ) : (
-                        <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 text-2xl">👤</span>
-                        </div>
-                      )}
+                      <OptimizedImage
+                        src={cv.profileImage}
+                        alt={cv.fullName}
+                        width={80}
+                        height={80}
+                        fallbackName={cv.fullName}
+                        className="rounded-full border-2 border-gray-200"
+                      />
                     </div>
 
                     {/* CV Info */}
@@ -642,7 +633,6 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                         <p className="text-sm text-gray-600">{cv.fullNameArabic}</p>
                       )}
                       <div className="flex items-center justify-center gap-2">
-                        <CountryFlag nationality={cv.nationality || ''} />
                         <span className="text-sm text-gray-600">{cv.nationality}</span>
                       </div>
                       <p className="text-sm text-gray-600">{cv.position}</p>
@@ -717,21 +707,14 @@ ${whatsappNumber ? `📱 للحجز عبر واتساب: ${whatsappNumber}` : ''
                   // List View
                   <div className="flex items-center gap-4">
                     {/* Profile Image */}
-                    {getImageUrl(cv.profileImage) ? (
-                      <img
-                        src={getImageUrl(cv.profileImage)!}
-                        alt={cv.fullName}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = generateAvatarUrl(cv.fullName, 64);
-                        }}
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-500 text-xl">👤</span>
-                      </div>
-                    )}
+                    <OptimizedImage
+                      src={cv.profileImage}
+                      alt={cv.fullName}
+                      width={64}
+                      height={64}
+                      fallbackName={cv.fullName}
+                      className="rounded-full border-2 border-gray-200"
+                    />
 
                     {/* CV Info */}
                     <div className="flex-1 min-w-0">
